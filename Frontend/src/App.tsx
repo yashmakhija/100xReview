@@ -14,7 +14,7 @@ import Onboarding from "./components/Onboarding";
 import PrivateRoute from "./components/PrivateRoute";
 import PublicRoute from "./components/PublicRoute";
 import { RecoilRoot } from "recoil";
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from "react-hot-toast";
 
 const App: React.FC = () => {
   return (

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useRecoilState, useResetRecoilState } from "recoil";
-import { Github, Globe, Send, ArrowLeft, X } from "lucide-react";
+import { Github, Globe, Send, ArrowLeft, X, Zap } from "lucide-react";
 import {
   getSubmittedProjectsCourse,
   reviewProject,
@@ -291,6 +291,17 @@ const ProjectReview: React.FC = () => {
                 >
                   <Globe className="w-5 h-5 mr-2" />
                   View Deployed Project
+                </a>
+              )}
+              {submission?.wsUrl && (
+                <a
+                  href={submission.wsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  <Zap className="w-5 h-5 mr-2" />
+                  View WebSocket URL
                 </a>
               )}
             </div>

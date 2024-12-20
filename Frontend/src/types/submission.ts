@@ -11,6 +11,7 @@ export interface Project {
 }
 
 export interface Submission {
+  wsUrl: string | undefined;
   id: number;
   githubUrl: string;
   deployUrl: string;

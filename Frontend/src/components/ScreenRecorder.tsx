@@ -227,16 +227,21 @@ const ScreenRecorder: React.FC<ScreenRecorderProps> = ({
         if (screenTrack) {
           tracks.push(screenTrack.clone());
         }
+      } else if (webcamStreamRef.current) {
+        // If no screen share, use canvas stream for webcam-only recording
+        const canvasStream = canvas.captureStream(30);
+        const canvasTrack = canvasStream.getVideoTracks()[0];
+        if (canvasTrack) {
+          tracks.push(canvasTrack);
+        }
       }
 
-      // Add webcam track if active
-      if (
-        webcamStreamRef.current &&
-        (!screenStreamRef.current || isWebcamActive)
-      ) {
-        const webcamTrack = webcamStreamRef.current.getVideoTracks()[0];
-        if (webcamTrack) {
-          tracks.push(webcamTrack.clone());
+      // Add webcam track if active and screen sharing
+      if (isWebcamActive && screenStreamRef.current) {
+        const canvasStream = canvas.captureStream(30);
+        const canvasTrack = canvasStream.getVideoTracks()[0];
+        if (canvasTrack) {
+          tracks.push(canvasTrack);
         }
       }
 

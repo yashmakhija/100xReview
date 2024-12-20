@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Mail, Lock, Phone, Sun, Moon } from "lucide-react";
+import { User, Mail, Lock, Phone } from "lucide-react";
 import { signUp } from "../lib/api";
-import { useDarkMode } from "../utils/darkMode";
 import toast from "react-hot-toast";
 
 const SignUpPage: React.FC = () => {
@@ -44,17 +43,19 @@ const SignUpPage: React.FC = () => {
       try {
         await signUp({
           ...formData,
-          email: formData.email.toLowerCase()
+          email: formData.email.toLowerCase(),
         });
-        
+
         // Show success toast
-        toast.success('Account created successfully! Please sign in.');
-        
+        toast.success("Account created successfully! Please sign in.");
+
         // Navigate to signin page
         navigate("/signin");
       } catch (error) {
         console.error("Sign up error:", error);
-        toast.error(error instanceof Error ? error.message : "Failed to create account");
+        toast.error(
+          error instanceof Error ? error.message : "Failed to create account"
+        );
         setErrors({
           api:
             error instanceof Error
