@@ -1,0 +1,37 @@
+{
+  "/endpoint1": {
+    "isDown": false,
+    "downtimeStart": null,
+    "totalDowntime": 210.272,
+    "totalChecks": 13,
+    "successfulChecks": 6
+  },
+  "/endpoint2": {
+    "isDown": false,
+    "downtimeStart": null,
+    "totalDowntime": 240.331,
+    "totalChecks": 13,
+    "successfulChecks": 5
+  },
+  "/endpoint3": {
+    "isDown": false,
+    "downtimeStart": null,
+    "totalDowntime": 120.167,
+    "totalChecks": 13,
+    "successfulChecks": 9
+  },
+  "/endpoint4": {
+    "isDown": false,
+    "downtimeStart": null,
+    "totalDowntime": 180.246,
+    "totalChecks": 13,
+    "successfulChecks": 7
+  },
+  "/endpoint5": {
+    "isDown": false,
+    "downtimeStart": null,
+    "totalDowntime": 270.359,
+    "totalChecks": 13,
+    "successfulChecks": 4
+  }
+}

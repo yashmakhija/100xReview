@@ -1,0 +1,135 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // Use your database provider (e.g., postgresql, mysql)
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  name         String
+  number       String?
+  email        String        @unique
+  password     String        // Store as hashed password
+  role         Role          @default(USER) // Role type for access control
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  isOnboarded  Boolean   @default(false)
+  biodata      UserBiodata?  // One-to-one relationship for biodata
+  enrollments  Enrollment[]  // Many-to-many with courses
+  macAddresses MacAddress[]  // One-to-many relationship with MAC addresses
+  attendances  Attendance[]  // One-to-many relationship with attendance
+  projectSubmissions ProjectSubmission[] // One-to-many for project submissions
+  createdCourses Course[]    @relation("AdminCourses") // Courses created by admin
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+model UserBiodata {
+  id         Int       @id @default(autoincrement())
+  bio        String?   // Basic about me
+  techStack  String[]  // Array of technologies (e.g., ["React", "Node.js"])
+  resume     String?   // Link to resume or file
+  userId     Int       @unique
+  user       User      @relation(fields: [userId], references: [id])
+}
+
+model Course {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  description String?
+  imageUrl    String?
+  createdBy   Int
+  admin       User         @relation("AdminCourses", fields: [createdBy], references: [id]) // Admin who created the course
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  enrollments Enrollment[] // Many-to-many relationship with users
+  schedules   Schedule[]   // One-to-many relationship with schedules
+  projects    Project[]    // One-to-many relationship with projects
+}
+
+model Enrollment {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  courseId  Int
+  startDate DateTime @default(now())
+  endDate   DateTime? 
+  user      User     @relation(fields: [userId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId]) // A user can enroll in a course only once
+}
+
+model Schedule {
+  id          Int          @id @default(autoincrement())
+  date        DateTime
+  topic       String
+  description String
+  courseId    Int
+  course      Course       @relation(fields: [courseId], references: [id])
+  attendances Attendance[] // One-to-many relationship with attendance
+}
+
+model Attendance {
+  id           Int      @id @default(autoincrement())
+  isPresent    Boolean  @default(false) // Whether the user attended
+  timeWorked   Int      @default(0)     // Total time worked in minutes
+  requiredTime Int      @default(300)   // Required time (e.g., 5 hours = 300 minutes)
+  userId       Int
+  scheduleId   Int
+  user         User     @relation(fields: [userId], references: [id])
+  schedule     Schedule @relation(fields: [scheduleId], references: [id])
+
+  @@unique([userId, scheduleId])
+}
+
+model Project {
+  id          Int           @id @default(autoincrement())
+  name        String
+  description String?
+  dueDate     DateTime
+  courseId    Int
+  course      Course        @relation(fields: [courseId], references: [id])
+  submissions ProjectSubmission[] // One-to-many relationship with submissions
+}
+
+model ProjectSubmission {
+  id            Int      @id @default(autoincrement())
+  githubUrl     String   // Link to the GitHub repository or project URL
+  deployUrl     String?    @unique
+  wsUrl String?
+  submittedAt   DateTime @default(now())
+  isReviewed    Boolean  @default(false)
+  reviewNotes   String?  // Admin's review notes
+  reviewVideoUrl String? // Optional link to recorded video review
+  userId        Int
+  projectId     Int
+  user          User     @relation(fields: [userId], references: [id])
+  project       Project  @relation(fields: [projectId], references: [id])
+}
+
+// model WiFi {
+//   id           Int           @id @default(autoincrement())
+//   name         String        @unique
+//   macAddresses MacAddress[]  // One-to-many relationship with MAC addresses
+// }
+
+model MacAddress {
+  id        Int    @id @default(autoincrement())
+  address   String @unique
+  userId    Int
+  // wifiId    Int
+  user      User   @relation(fields: [userId], references: [id])
+  // wifi      WiFi   @relation(fields: [wifiId], references: [id])
+}
