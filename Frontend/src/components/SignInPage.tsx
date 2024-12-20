@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock, Sun, Moon } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
 import { signIn } from "../lib/api";
-import { useDarkMode } from "../utils/darkMode";
+
 import toast from "react-hot-toast";
 
 const SignInPage: React.FC = () => {
   const navigate = useNavigate();
-  const { darkMode, toggleDarkMode } = useDarkMode();
+
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -40,20 +40,22 @@ const SignInPage: React.FC = () => {
       try {
         const response = await signIn({
           ...formData,
-          email: formData.email.toLowerCase()
+          email: formData.email.toLowerCase(),
         });
-        
+
         // Set the authorization token with Bearer prefix
-        localStorage.setItem('authorization', `Bearer ${response.token}`);
-        
+        localStorage.setItem("authorization", `Bearer ${response.token}`);
+
         // Show success toast
-        toast.success('Successfully signed in!');
-        
+        toast.success("Successfully signed in!");
+
         // Navigate to onboarding
         navigate("/onboarding");
       } catch (error) {
         console.error("Sign in error:", error);
-        toast.error(error instanceof Error ? error.message : "Failed to sign in");
+        toast.error(
+          error instanceof Error ? error.message : "Failed to sign in"
+        );
         setErrors({
           api:
             error instanceof Error

@@ -43,13 +43,6 @@ interface User {
   connectedWifi?: string;
 }
 
-interface ScheduleItem {
-  id: number;
-  date: string;
-  topic: string;
-  description: string;
-}
-
 interface ProjectWithSubmissions extends Project {
   submissions?: {
     projectId: number;
@@ -109,10 +102,12 @@ const AdminDashboard: React.FC = () => {
   });
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<ProjectWithSubmissions[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [, setLoading] = useState(true);
+  const [, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedReview, setSelectedReview] = useState<SubmissionData | null>(null);
+  const [selectedReview, setSelectedReview] = useState<SubmissionData | null>(
+    null
+  );
   const [showAddProject, setShowAddProject] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
@@ -208,8 +203,12 @@ const AdminDashboard: React.FC = () => {
 
   const getProjectStats = (projectId: number) => {
     const submissions = projects.flatMap((p) => p.submissions || []);
-    const pending = submissions.filter(s => s.projectId === projectId && !s.isReviewed).length;
-    const reviewed = submissions.filter(s => s.projectId === projectId && s.isReviewed).length;
+    const pending = submissions.filter(
+      (s) => s.projectId === projectId && !s.isReviewed
+    ).length;
+    const reviewed = submissions.filter(
+      (s) => s.projectId === projectId && s.isReviewed
+    ).length;
     return { pending, reviewed };
   };
 
@@ -221,45 +220,49 @@ const AdminDashboard: React.FC = () => {
       <div className="space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
           <div className="flex-1 flex items-center gap-4">
-          <div className="relative flex-1 max-w-md">
-            <input
-              type="text"
-              placeholder="Search submissions..."
-              value={filter.search}
-              onChange={(e) => setFilter((prev) => ({ ...prev, search: e.target.value }))}
-              className={`w-full pl-10 pr-4 py-2 rounded-md border ${
-                darkMode ? "bg-zinc-800 border-zinc-700" : "bg-white border-gray-200"
-              }`}
-            />
-            <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-          </div>
+            <div className="relative flex-1 max-w-md">
+              <input
+                type="text"
+                placeholder="Search submissions..."
+                value={filter.search}
+                onChange={(e) =>
+                  setFilter((prev) => ({ ...prev, search: e.target.value }))
+                }
+                className={`w-full pl-10 pr-4 py-2 rounded-md border ${
+                  darkMode
+                    ? "bg-zinc-800 border-zinc-700"
+                    : "bg-white border-gray-200"
+                }`}
+              />
+              <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+            </div>
 
-          <button
-            onClick={() => setShowFilters(!showFilters)}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
               className={`p-2 rounded-md border transition-colors ${
-              showFilters
-                ? darkMode
-                  ? "bg-white text-black"
-                  : "bg-black text-white"
-                : darkMode
-                ? "border-zinc-800 hover:border-zinc-700"
-                : "border-gray-200 hover:border-gray-300"
-            }`}
-          >
-            <Filter className="h-5 w-5" />
-          </button>
+                showFilters
+                  ? darkMode
+                    ? "bg-white text-black"
+                    : "bg-black text-white"
+                  : darkMode
+                  ? "border-zinc-800 hover:border-zinc-700"
+                  : "border-gray-200 hover:border-gray-300"
+              }`}
+            >
+              <Filter className="h-5 w-5" />
+            </button>
 
-          <button
-            onClick={() => setShowAddProject(true)}
+            <button
+              onClick={() => setShowAddProject(true)}
               className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${
-              darkMode
-                ? "bg-white text-black hover:bg-gray-100"
-                : "bg-black text-white hover:bg-gray-900"
-            }`}
-          >
-            <Plus className="h-4 w-4" />
-            <span>Add Project</span>
-          </button>
+                darkMode
+                  ? "bg-white text-black hover:bg-gray-100"
+                  : "bg-black text-white hover:bg-gray-900"
+              }`}
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Project</span>
+            </button>
           </div>
         </div>
 
@@ -404,27 +407,42 @@ const AdminDashboard: React.FC = () => {
         )}
 
         {/* Table section */}
-        <div className={`rounded-lg overflow-hidden border ${
-          darkMode ? "border-zinc-800" : "border-gray-200"
-        }`}>
+        <div
+          className={`rounded-lg overflow-hidden border ${
+            darkMode ? "border-zinc-800" : "border-gray-200"
+          }`}
+        >
           <table className="w-full">
-            <thead className={`text-left ${darkMode ? "bg-zinc-800/50" : "bg-gray-50"}`}>
+            <thead
+              className={`text-left ${
+                darkMode ? "bg-zinc-800/50" : "bg-gray-50"
+              }`}
+            >
               <tr>
                 <th className="px-6 py-3 text-sm font-medium">Name</th>
                 <th className="px-6 py-3 text-sm font-medium">Email</th>
                 <th className="px-6 py-3 text-sm font-medium">Project</th>
-                <th className="px-6 py-3 text-sm font-medium">Submission Date</th>
+                <th className="px-6 py-3 text-sm font-medium">
+                  Submission Date
+                </th>
                 <th className="px-6 py-3 text-sm font-medium">Status</th>
                 <th className="px-6 py-3 text-sm font-medium">Links</th>
                 <th className="px-6 py-3 text-sm font-medium">Action</th>
               </tr>
             </thead>
-            <tbody className={`divide-y ${darkMode ? "divide-zinc-800" : "divide-gray-200"}`}>
+            <tbody
+              className={`divide-y ${
+                darkMode ? "divide-zinc-800" : "divide-gray-200"
+              }`}
+            >
               {filteredSubmissions.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className={`px-6 py-8 text-center text-sm ${
-                    darkMode ? "text-zinc-400" : "text-gray-500"
-                  }`}>
+                  <td
+                    colSpan={7}
+                    className={`px-6 py-8 text-center text-sm ${
+                      darkMode ? "text-zinc-400" : "text-gray-500"
+                    }`}
+                  >
                     {filter.search
                       ? "No submissions found matching your search."
                       : filter.status !== "all"
@@ -434,21 +452,30 @@ const AdminDashboard: React.FC = () => {
                 </tr>
               ) : (
                 filteredSubmissions.map((submission) => (
-                  <tr key={submission.id} className={`group ${
-                    darkMode ? "hover:bg-zinc-800/50" : "hover:bg-gray-50"
-                  } transition-colors`}>
+                  <tr
+                    key={submission.id}
+                    className={`group ${
+                      darkMode ? "hover:bg-zinc-800/50" : "hover:bg-gray-50"
+                    } transition-colors`}
+                  >
                     <td className="px-6 py-4 text-sm">{submission.userName}</td>
-                    <td className="px-6 py-4 text-sm">{submission.userEmail}</td>
-                    <td className="px-6 py-4 text-sm">{submission.projectName}</td>
+                    <td className="px-6 py-4 text-sm">
+                      {submission.userEmail}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      {submission.projectName}
+                    </td>
                     <td className="px-6 py-4 text-sm">
                       {new Date(submission.submittedAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-sm">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        submission.isReviewed
-                          ? "bg-green-500/10 text-green-500"
-                          : "bg-amber-500/10 text-amber-500"
-                      }`}>
+                      <span
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          submission.isReviewed
+                            ? "bg-green-500/10 text-green-500"
+                            : "bg-amber-500/10 text-amber-500"
+                        }`}
+                      >
                         {submission.isReviewed ? (
                           <>
                             <CheckCircle className="h-3.5 w-3.5 mr-1" />
@@ -530,7 +557,9 @@ const AdminDashboard: React.FC = () => {
                             : "text-red-500 bg-red-500/10 hover:bg-red-500/20"
                         }`}
                       >
-                        {submission.isReviewed ? "View Review" : "Review Project"}
+                        {submission.isReviewed
+                          ? "View Review"
+                          : "Review Project"}
                       </button>
                     </td>
                   </tr>
@@ -550,7 +579,9 @@ const AdminDashboard: React.FC = () => {
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <div className="w-64">
-            <label className="block text-sm font-medium mb-1">Select Course</label>
+            <label className="block text-sm font-medium mb-1">
+              Select Course
+            </label>
             <select
               value={selectedCourseId}
               onChange={(e) => setSelectedCourseId(e.target.value)}
@@ -560,7 +591,7 @@ const AdminDashboard: React.FC = () => {
                   : "bg-white border-gray-200"
               }`}
             >
-              {courses.map(course => (
+              {courses.map((course) => (
                 <option key={course.id} value={course.id}>
                   {course.name}
                 </option>
@@ -580,20 +611,32 @@ const AdminDashboard: React.FC = () => {
 
   const renderUsersSection = () => {
     // Sort users based on number of project submissions
-    const usersWithStats = users.map(user => {
-      const userSubmissions = projects.flatMap(p => p.submissions || [])
-        .filter(s => s.userId === user.id);
-      
-      return {
-        ...user,
-        totalSubmissions: userSubmissions.length,
-        completedSubmissions: userSubmissions.filter(s => s.isReviewed).length,
-        pendingSubmissions: userSubmissions.filter(s => !s.isReviewed).length,
-        lastSubmission: userSubmissions.length > 0 
-          ? new Date(Math.max(...userSubmissions.map(s => new Date(s.submittedAt).getTime())))
-          : null
-      };
-    }).sort((a, b) => b.totalSubmissions - a.totalSubmissions);
+    const usersWithStats = users
+      .map((user) => {
+        const userSubmissions = projects
+          .flatMap((p) => p.submissions || [])
+          .filter((s) => s.userId === user.id);
+
+        return {
+          ...user,
+          totalSubmissions: userSubmissions.length,
+          completedSubmissions: userSubmissions.filter((s) => s.isReviewed)
+            .length,
+          pendingSubmissions: userSubmissions.filter((s) => !s.isReviewed)
+            .length,
+          lastSubmission:
+            userSubmissions.length > 0
+              ? new Date(
+                  Math.max(
+                    ...userSubmissions.map((s) =>
+                      new Date(s.submittedAt).getTime()
+                    )
+                  )
+                )
+              : null,
+        };
+      })
+      .sort((a, b) => b.totalSubmissions - a.totalSubmissions);
 
     return (
       <div className="space-y-6">
@@ -608,17 +651,27 @@ const AdminDashboard: React.FC = () => {
             {
               label: "Most Active User",
               value: usersWithStats[0]?.name || "N/A",
-              subtext: `${usersWithStats[0]?.totalSubmissions || 0} submissions`,
+              subtext: `${
+                usersWithStats[0]?.totalSubmissions || 0
+              } submissions`,
               icon: Award,
             },
             {
               label: "Average Submissions",
-              value: (usersWithStats.reduce((acc, user) => acc + user.totalSubmissions, 0) / users.length).toFixed(1),
+              value: (
+                usersWithStats.reduce(
+                  (acc, user) => acc + user.totalSubmissions,
+                  0
+                ) / users.length
+              ).toFixed(1),
               icon: TrendingUp,
             },
             {
               label: "Total Submissions",
-              value: usersWithStats.reduce((acc, user) => acc + user.totalSubmissions, 0),
+              value: usersWithStats.reduce(
+                (acc, user) => acc + user.totalSubmissions,
+                0
+              ),
               icon: Briefcase,
             },
           ].map((stat, index) => (
@@ -631,22 +684,28 @@ const AdminDashboard: React.FC = () => {
               } border rounded-lg p-6`}
             >
               <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-lg ${
-                  darkMode ? "bg-zinc-800" : "bg-gray-100"
-                }`}>
+                <div
+                  className={`p-3 rounded-lg ${
+                    darkMode ? "bg-zinc-800" : "bg-gray-100"
+                  }`}
+                >
                   <stat.icon className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className={`text-sm ${
-                    darkMode ? "text-zinc-400" : "text-gray-500"
-                  }`}>
+                  <p
+                    className={`text-sm ${
+                      darkMode ? "text-zinc-400" : "text-gray-500"
+                    }`}
+                  >
                     {stat.label}
                   </p>
                   <p className="text-xl font-semibold mt-1">{stat.value}</p>
                   {stat.subtext && (
-                    <p className={`text-sm ${
-                      darkMode ? "text-zinc-500" : "text-gray-400"
-                    }`}>
+                    <p
+                      className={`text-sm ${
+                        darkMode ? "text-zinc-500" : "text-gray-400"
+                      }`}
+                    >
                       {stat.subtext}
                     </p>
                   )}
@@ -657,33 +716,56 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Users Table */}
-        <div className={`rounded-lg border ${
-          darkMode ? "border-zinc-800" : "border-gray-200"
-        }`}>
+        <div
+          className={`rounded-lg border ${
+            darkMode ? "border-zinc-800" : "border-gray-200"
+          }`}
+        >
           <table className="w-full">
             <thead className={darkMode ? "bg-zinc-800/50" : "bg-gray-50"}>
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium">User</th>
-                <th className="px-6 py-3 text-left text-sm font-medium">Email</th>
-                <th className="px-6 py-3 text-left text-sm font-medium">Role</th>
-                <th className="px-6 py-3 text-left text-sm font-medium">Total Submissions</th>
-                <th className="px-6 py-3 text-left text-sm font-medium">Completed</th>
-                <th className="px-6 py-3 text-left text-sm font-medium">Pending</th>
-                <th className="px-6 py-3 text-left text-sm font-medium">Last Submission</th>
+                <th className="px-6 py-3 text-left text-sm font-medium">
+                  User
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-medium">
+                  Email
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-medium">
+                  Role
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-medium">
+                  Total Submissions
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-medium">
+                  Completed
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-medium">
+                  Pending
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-medium">
+                  Last Submission
+                </th>
               </tr>
             </thead>
-            <tbody className={`divide-y ${
-              darkMode ? "divide-zinc-800" : "divide-gray-200"
-            }`}>
+            <tbody
+              className={`divide-y ${
+                darkMode ? "divide-zinc-800" : "divide-gray-200"
+              }`}
+            >
               {usersWithStats.map((user) => (
-                <tr key={user.id} className={`${
-                  darkMode ? "hover:bg-zinc-800/50" : "hover:bg-gray-50"
-                } transition-colors`}>
+                <tr
+                  key={user.id}
+                  className={`${
+                    darkMode ? "hover:bg-zinc-800/50" : "hover:bg-gray-50"
+                  } transition-colors`}
+                >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                        darkMode ? "bg-zinc-800" : "bg-gray-100"
-                      }`}>
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                          darkMode ? "bg-zinc-800" : "bg-gray-100"
+                        }`}
+                      >
                         {user.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
@@ -693,11 +775,13 @@ const AdminDashboard: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 text-sm">{user.email}</td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      user.role === 'admin'
-                        ? 'bg-purple-100 text-purple-800'
-                        : 'bg-blue-100 text-blue-800'
-                    }`}>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        user.role === "admin"
+                          ? "bg-purple-100 text-purple-800"
+                          : "bg-blue-100 text-blue-800"
+                      }`}
+                    >
                       {user.role}
                     </span>
                   </td>
@@ -713,13 +797,13 @@ const AdminDashboard: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm">
-                    {user.lastSubmission 
-                      ? user.lastSubmission.toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
+                    {user.lastSubmission
+                      ? user.lastSubmission.toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
                         })
-                      : 'No submissions'}
+                      : "No submissions"}
                   </td>
                 </tr>
               ))}
@@ -735,40 +819,45 @@ const AdminDashboard: React.FC = () => {
       name: "",
       description: "",
       dueDate: "",
-      courseId: courses[0]?.id || 0
+      courseId: courses[0]?.id || 0,
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       try {
-        const selectedCourse = courses.find(c => c.id === projectData.courseId);
+        const selectedCourse = courses.find(
+          (c) => c.id === projectData.courseId
+        );
         await createProject(projectData);
-        
+
         // Refresh projects list
         const updatedProjects = await fetchAllProjects();
         setProjects(updatedProjects);
-        
+
         // Show success toast
-        toast.success(`Project added to ${selectedCourse?.name || 'course'} successfully!`, {
-          duration: 4000,
-          position: 'top-right',
-          style: {
-            background: darkMode ? '#27272a' : '#fff',
-            color: darkMode ? '#fff' : '#000',
-            border: `1px solid ${darkMode ? '#3f3f46' : '#e5e7eb'}`,
-          },
-        });
-        
+        toast.success(
+          `Project added to ${selectedCourse?.name || "course"} successfully!`,
+          {
+            duration: 4000,
+            position: "top-right",
+            style: {
+              background: darkMode ? "#27272a" : "#fff",
+              color: darkMode ? "#fff" : "#000",
+              border: `1px solid ${darkMode ? "#3f3f46" : "#e5e7eb"}`,
+            },
+          }
+        );
+
         onClose();
       } catch (error) {
         console.error("Error creating project:", error);
         toast.error("Failed to create project. Please try again.", {
           duration: 4000,
-          position: 'top-right',
+          position: "top-right",
           style: {
-            background: darkMode ? '#27272a' : '#fff',
-            color: darkMode ? '#fff' : '#000',
-            border: `1px solid ${darkMode ? '#3f3f46' : '#e5e7eb'}`,
+            background: darkMode ? "#27272a" : "#fff",
+            color: darkMode ? "#fff" : "#000",
+            border: `1px solid ${darkMode ? "#3f3f46" : "#e5e7eb"}`,
           },
         });
       }
@@ -776,7 +865,11 @@ const AdminDashboard: React.FC = () => {
 
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className={`${darkMode ? "bg-zinc-900" : "bg-white"} rounded-lg p-6 w-full max-w-md`}>
+        <div
+          className={`${
+            darkMode ? "bg-zinc-900" : "bg-white"
+          } rounded-lg p-6 w-full max-w-md`}
+        >
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Add New Project</h2>
             <button
@@ -791,12 +884,16 @@ const AdminDashboard: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Project Name</label>
+              <label className="block text-sm font-medium mb-1">
+                Project Name
+              </label>
               <input
                 type="text"
                 required
                 value={projectData.name}
-                onChange={(e) => setProjectData(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) =>
+                  setProjectData((prev) => ({ ...prev, name: e.target.value }))
+                }
                 className={`w-full p-2 rounded-md border ${
                   darkMode
                     ? "bg-zinc-800 border-zinc-700 text-white"
@@ -807,11 +904,18 @@ const AdminDashboard: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Description</label>
+              <label className="block text-sm font-medium mb-1">
+                Description
+              </label>
               <textarea
                 required
                 value={projectData.description}
-                onChange={(e) => setProjectData(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) =>
+                  setProjectData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
                 className={`w-full p-2 rounded-md border ${
                   darkMode
                     ? "bg-zinc-800 border-zinc-700 text-white"
@@ -827,7 +931,12 @@ const AdminDashboard: React.FC = () => {
               <select
                 required
                 value={projectData.courseId}
-                onChange={(e) => setProjectData(prev => ({ ...prev, courseId: Number(e.target.value) }))}
+                onChange={(e) =>
+                  setProjectData((prev) => ({
+                    ...prev,
+                    courseId: Number(e.target.value),
+                  }))
+                }
                 className={`w-full p-2 rounded-md border ${
                   darkMode
                     ? "bg-zinc-800 border-zinc-700 text-white"
@@ -835,7 +944,7 @@ const AdminDashboard: React.FC = () => {
                 }`}
               >
                 <option value="">Select a course</option>
-                {courses.map(course => (
+                {courses.map((course) => (
                   <option key={course.id} value={course.id}>
                     {course.name}
                   </option>
@@ -850,7 +959,12 @@ const AdminDashboard: React.FC = () => {
                   type="date"
                   required
                   value={projectData.dueDate}
-                  onChange={(e) => setProjectData(prev => ({ ...prev, dueDate: e.target.value }))}
+                  onChange={(e) =>
+                    setProjectData((prev) => ({
+                      ...prev,
+                      dueDate: e.target.value,
+                    }))
+                  }
                   className={`w-full p-2 rounded-md border ${
                     darkMode
                       ? "bg-zinc-800 border-zinc-700 text-white"
@@ -896,16 +1010,32 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <div className={`flex flex-col min-h-screen ${darkMode ? "bg-black text-white" : "bg-white text-black"}`}>
-      <header className={`sticky top-0 z-10 ${darkMode ? "bg-zinc-900" : "bg-white"} border-b ${darkMode ? "border-zinc-800" : "border-gray-200"}`}>
+    <div
+      className={`flex flex-col min-h-screen ${
+        darkMode ? "bg-black text-white" : "bg-white text-black"
+      }`}
+    >
+      <header
+        className={`sticky top-0 z-10 ${
+          darkMode ? "bg-zinc-900" : "bg-white"
+        } border-b ${darkMode ? "border-zinc-800" : "border-gray-200"}`}
+      >
         <div className="flex items-center justify-between p-4 max-w-7xl mx-auto">
           <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
           <div className="flex items-center space-x-4">
             <button
               onClick={toggleDarkMode}
-              className={`p-2 rounded-full ${darkMode ? "bg-zinc-800 text-white hover:bg-zinc-700" : "bg-gray-100 text-black hover:bg-gray-200"} transition-colors`}
+              className={`p-2 rounded-full ${
+                darkMode
+                  ? "bg-zinc-800 text-white hover:bg-zinc-700"
+                  : "bg-gray-100 text-black hover:bg-gray-200"
+              } transition-colors`}
             >
-              {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              {darkMode ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
             </button>
             <button
               onClick={handleLogout}
@@ -988,7 +1118,13 @@ const AdminDashboard: React.FC = () => {
             ))}
           </div>
 
-          <div className={`${darkMode ? "bg-zinc-900 border-zinc-800" : "bg-white border-gray-200"} border rounded-lg overflow-hidden`}>
+          <div
+            className={`${
+              darkMode
+                ? "bg-zinc-900 border-zinc-800"
+                : "bg-white border-gray-200"
+            } border rounded-lg overflow-hidden`}
+          >
             <div className="p-6">
               <div className="flex flex-wrap gap-2 mb-6">
                 {["schedule", "projects", "users"].map((tab) => (
@@ -1021,9 +1157,14 @@ const AdminDashboard: React.FC = () => {
       </main>
 
       {selectedReview && (
-        <ReviewModal review={selectedReview} onClose={() => setSelectedReview(null)} />
+        <ReviewModal
+          review={selectedReview}
+          onClose={() => setSelectedReview(null)}
+        />
       )}
-      {showAddProject && <AddProjectModal onClose={() => setShowAddProject(false)} />}
+      {showAddProject && (
+        <AddProjectModal onClose={() => setShowAddProject(false)} />
+      )}
     </div>
   );
 };

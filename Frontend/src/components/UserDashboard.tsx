@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-  Wifi,
-  Clock,
-  Calendar,
-  TrendingUp,
   X,
   Github,
   Globe,
@@ -46,7 +42,9 @@ const UserDashboard: React.FC = () => {
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [selectedVideoUrl, setSelectedVideoUrl] = useState("");
-  const [selectedReview, setSelectedReview] = useState<ProjectStatus | null>(null);
+  const [selectedReview, setSelectedReview] = useState<ProjectStatus | null>(
+    null
+  );
   const [userStats, setUserStats] = useState({
     totalSubmissions: 0,
     completedProjects: 0,
@@ -81,11 +79,12 @@ const UserDashboard: React.FC = () => {
     async function fetchCourseData() {
       try {
         setLoading(true);
-        const [projectsData, scheduleData, projectStatusData] = await Promise.all([
-          api.fetchProjects(selectedCourseId.toString()),
-          api.fetchWeeklySchedule(selectedCourseId.toString()),
-          api.getUserProjectStatuses(),
-        ]);
+        const [projectsData, scheduleData, projectStatusData] =
+          await Promise.all([
+            api.fetchProjects(selectedCourseId.toString()),
+            api.fetchWeeklySchedule(selectedCourseId.toString()),
+            api.getUserProjectStatuses(),
+          ]);
 
         setProjects(projectsData);
         setWeeklySchedule(scheduleData);
@@ -93,20 +92,27 @@ const UserDashboard: React.FC = () => {
 
         // Calculate user stats
         const completedProjects = projectStatusData.filter(
-          (status) => status.status === "COMPLETED"
+          (status) => status.status === "REVIEWED"
         ).length;
         const pendingReviews = projectStatusData.filter(
           (status) => status.status === "PENDING_REVIEW"
         ).length;
-        const lastSubmission = projectStatusData.length > 0
-          ? new Date(Math.max(...projectStatusData.map(status => new Date(status.submittedAt).getTime())))
-          : null;
-        
+        const lastSubmission =
+          projectStatusData.length > 0
+            ? new Date(
+                Math.max(
+                  ...projectStatusData.map((status) =>
+                    new Date(status.submittedAt).getTime()
+                  )
+                )
+              )
+            : null;
+
         // Calculate productivity score (example algorithm)
         const productivityScore = Math.min(
           Math.round(
-            ((completedProjects * 100) / Math.max(projectsData.length, 1)) +
-            (pendingReviews * 10)
+            (completedProjects * 100) / Math.max(projectsData.length, 1) +
+              pendingReviews * 10
           ),
           100
         );
@@ -137,9 +143,9 @@ const UserDashboard: React.FC = () => {
 
   const calculateStreak = (statuses: ProjectStatus[]) => {
     if (statuses.length === 0) return 0;
-    
+
     const sortedDates = statuses
-      .map(status => new Date(status.submittedAt))
+      .map((status) => new Date(status.submittedAt))
       .sort((a, b) => b.getTime() - a.getTime());
 
     let streak = 1;
@@ -147,7 +153,7 @@ const UserDashboard: React.FC = () => {
     const oneDay = 24 * 60 * 60 * 1000;
 
     // Check if there's a submission in the last 24 hours
-    if ((today.getTime() - sortedDates[0].getTime()) > oneDay) {
+    if (today.getTime() - sortedDates[0].getTime() > oneDay) {
       return 0;
     }
 
@@ -237,13 +243,6 @@ const UserDashboard: React.FC = () => {
     navigate("/login");
   };
 
-  const stats = [
-    { icon: Wifi, label: "Connected WiFi", value: "Office-Main" },
-    { icon: Clock, label: "Uptime Today", value: "7h 30m" },
-    { icon: Calendar, label: "This Month Uptime", value: "165h 45m" },
-    { icon: TrendingUp, label: "Productivity Score", value: "92%" },
-  ];
-
   return (
     <div
       className={`min-h-screen ${
@@ -293,15 +292,27 @@ const UserDashboard: React.FC = () => {
         {error && <ErrorMessage message={error} />}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className={`${darkMode ? "bg-gray-800" : "bg-white"} overflow-hidden shadow rounded-lg`}>
+          <div
+            className={`${
+              darkMode ? "bg-gray-800" : "bg-white"
+            } overflow-hidden shadow rounded-lg`}
+          >
             <div className="p-5">
               <div className="flex items-center">
-                <div className={`flex-shrink-0 ${darkMode ? "text-blue-400" : "text-blue-600"}`}>
+                <div
+                  className={`flex-shrink-0 ${
+                    darkMode ? "text-blue-400" : "text-blue-600"
+                  }`}
+                >
                   <Briefcase className="h-6 w-6" />
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className={`text-sm font-medium ${darkMode ? "text-gray-400" : "text-gray-500"} truncate`}>
+                    <dt
+                      className={`text-sm font-medium ${
+                        darkMode ? "text-gray-400" : "text-gray-500"
+                      } truncate`}
+                    >
                       Total Submissions
                     </dt>
                     <dd className="text-lg font-medium text-gray-900 dark:text-white">
@@ -313,15 +324,27 @@ const UserDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className={`${darkMode ? "bg-gray-800" : "bg-white"} overflow-hidden shadow rounded-lg`}>
+          <div
+            className={`${
+              darkMode ? "bg-gray-800" : "bg-white"
+            } overflow-hidden shadow rounded-lg`}
+          >
             <div className="p-5">
               <div className="flex items-center">
-                <div className={`flex-shrink-0 ${darkMode ? "text-green-400" : "text-green-600"}`}>
+                <div
+                  className={`flex-shrink-0 ${
+                    darkMode ? "text-green-400" : "text-green-600"
+                  }`}
+                >
                   <CheckCircle className="h-6 w-6" />
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className={`text-sm font-medium ${darkMode ? "text-gray-400" : "text-gray-500"} truncate`}>
+                    <dt
+                      className={`text-sm font-medium ${
+                        darkMode ? "text-gray-400" : "text-gray-500"
+                      } truncate`}
+                    >
                       Completed Projects
                     </dt>
                     <dd className="text-lg font-medium text-gray-900 dark:text-white">
@@ -333,15 +356,27 @@ const UserDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className={`${darkMode ? "bg-gray-800" : "bg-white"} overflow-hidden shadow rounded-lg`}>
+          <div
+            className={`${
+              darkMode ? "bg-gray-800" : "bg-white"
+            } overflow-hidden shadow rounded-lg`}
+          >
             <div className="p-5">
               <div className="flex items-center">
-                <div className={`flex-shrink-0 ${darkMode ? "text-amber-400" : "text-amber-600"}`}>
+                <div
+                  className={`flex-shrink-0 ${
+                    darkMode ? "text-amber-400" : "text-amber-600"
+                  }`}
+                >
                   <Clock3 className="h-6 w-6" />
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className={`text-sm font-medium ${darkMode ? "text-gray-400" : "text-gray-500"} truncate`}>
+                    <dt
+                      className={`text-sm font-medium ${
+                        darkMode ? "text-gray-400" : "text-gray-500"
+                      } truncate`}
+                    >
                       Pending Reviews
                     </dt>
                     <dd className="text-lg font-medium text-gray-900 dark:text-white">
@@ -353,15 +388,27 @@ const UserDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className={`${darkMode ? "bg-gray-800" : "bg-white"} overflow-hidden shadow rounded-lg`}>
+          <div
+            className={`${
+              darkMode ? "bg-gray-800" : "bg-white"
+            } overflow-hidden shadow rounded-lg`}
+          >
             <div className="p-5">
               <div className="flex items-center">
-                <div className={`flex-shrink-0 ${darkMode ? "text-purple-400" : "text-purple-600"}`}>
+                <div
+                  className={`flex-shrink-0 ${
+                    darkMode ? "text-purple-400" : "text-purple-600"
+                  }`}
+                >
                   <Award className="h-6 w-6" />
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className={`text-sm font-medium ${darkMode ? "text-gray-400" : "text-gray-500"} truncate`}>
+                    <dt
+                      className={`text-sm font-medium ${
+                        darkMode ? "text-gray-400" : "text-gray-500"
+                      } truncate`}
+                    >
                       Active Streak
                     </dt>
                     <dd className="text-lg font-medium text-gray-900 dark:text-white">

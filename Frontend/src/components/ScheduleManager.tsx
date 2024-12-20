@@ -22,6 +22,8 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ darkMode, courseId })
   const [newSchedule, setNewSchedule] = useState<Omit<ScheduleItem, 'id'>>({
     courseId: parseInt(courseId),
     date: new Date().toISOString().split('T')[0],
+    topic: "",
+    description: "",
     items: [{ title: "", description: "" }]
   });
 
@@ -29,6 +31,8 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ darkMode, courseId })
     setNewSchedule({
       courseId: parseInt(courseId),
       date: new Date().toISOString().split('T')[0],
+      topic: "",
+      description: "",
       items: [{ title: "", description: "" }]
     });
     setEditingId(null);
@@ -90,6 +94,8 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ darkMode, courseId })
       setNewSchedule({
         courseId: parseInt(courseId),
         date: new Date().toISOString().split('T')[0],
+        topic: "",
+        description: "",
         items: [{ title: "", description: "" }]
       });
     } catch (error) {

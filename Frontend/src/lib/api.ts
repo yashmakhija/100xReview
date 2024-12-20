@@ -1,7 +1,8 @@
+import { ReactNode } from "react";
 import { z } from "zod";
 
 // Base API configuration
-const API_BASE = "http://localhost:8012";
+const API_BASE = "https://100xreview.classicoder.com";
 
 // Interfaces
 export interface Project {
@@ -30,6 +31,8 @@ export interface Course {
 }
 
 export interface ScheduleItem {
+  topic: ReactNode;
+  description: ReactNode;
   id: number;
   courseId: number;
   date: string;
