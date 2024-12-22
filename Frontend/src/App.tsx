@@ -11,74 +11,56 @@ import ProjectReview from "./components/ProjectReview";
 import SignInPage from "./components/SignInPage";
 import SignUpPage from "./components/SignUpPage";
 import Onboarding from "./components/Onboarding";
-import PrivateRoute from "./components/PrivateRoute";
-import PublicRoute from "./components/PublicRoute";
 import { RecoilRoot } from "recoil";
 import { Toaster } from "react-hot-toast";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const App: React.FC = () => {
   return (
     <RecoilRoot>
       <Router>
         <Routes>
-          <Route
-            path="/signin"
-            element={
-              <PublicRoute>
-                <SignInPage />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/signup"
-            element={
-              <PublicRoute>
-                <SignUpPage />
-              </PublicRoute>
-            }
-          />
+          <Route path="/signin" element={<SignInPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+
           <Route
             path="/onboarding"
             element={
-              <PrivateRoute>
+              <ProtectedRoute requiredRole="USER">
                 <Onboarding />
-              </PrivateRoute>
+              </ProtectedRoute>
             }
           />
+
           <Route
             path="/dashboard"
             element={
-              <PrivateRoute>
+              <ProtectedRoute requiredRole="USER">
                 <UserDashboard />
-              </PrivateRoute>
+              </ProtectedRoute>
             }
           />
+
           <Route
             path="/admin"
             element={
-              <PrivateRoute>
+              <ProtectedRoute requiredRole="ADMIN">
                 <AdminDashboard />
-              </PrivateRoute>
+              </ProtectedRoute>
             }
           />
+
           <Route
             path="/project-review/:projectId/:submissionId"
             element={
-              <PrivateRoute>
+              <ProtectedRoute requiredRole="ADMIN">
                 <ProjectReview />
-              </PrivateRoute>
+              </ProtectedRoute>
             }
           />
+
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          {/* Redirect all other routes to signin */}
-          <Route
-            path="*"
-            element={
-              <PublicRoute>
-                <SignInPage />
-              </PublicRoute>
-            }
-          />
+          <Route path="*" element={<Navigate to="/signin" replace />} />
         </Routes>
       </Router>
       <Toaster />

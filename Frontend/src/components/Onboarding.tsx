@@ -25,17 +25,37 @@ const Onboarding: React.FC = () => {
   const { darkMode, toggleDarkMode } = useDarkMode();
 
   useEffect(() => {
-    const checkStatus = async () => {
+    const checkStatusAndRedirect = async () => {
       try {
+        // First check onboarding status
         const { isOnboarded } = await checkOnboardingStatus();
+        
         if (isOnboarded) {
-          navigate("/dashboard");
+          // If onboarded, check role from token
+          const token = localStorage.getItem("authorization");
+          if (token) {
+            const payload = token.split(".")[1];
+            const decodedToken = JSON.parse(atob(payload));
+            const userRole = decodedToken.role;
+
+            // Redirect based on role
+            if (userRole === "ADMIN") {
+              navigate("/admin");
+            } else {
+              navigate("/dashboard");
+            }
+          } else {
+            navigate("/signin");
+          }
         }
+        // If not onboarded, stay on onboarding page
       } catch (error) {
-        console.error("Error checking onboarding status:", error);
+        console.error("Error checking status:", error);
+        navigate("/signin");
       }
     };
-    checkStatus();
+
+    checkStatusAndRedirect();
   }, [navigate]);
 
   useEffect(() => {

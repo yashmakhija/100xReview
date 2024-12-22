@@ -43,14 +43,13 @@ const SignInPage: React.FC = () => {
           email: formData.email.toLowerCase(),
         });
 
-        // Set the authorization token with Bearer prefix
-        localStorage.setItem("authorization", `Bearer ${response.token}`);
+        const token = `Bearer ${response.token}`;
+        localStorage.setItem("authorization", token);
 
-        // Show success toast
         toast.success("Successfully signed in!");
 
-        // Navigate to onboarding
         navigate("/onboarding");
+        
       } catch (error) {
         console.error("Sign in error:", error);
         toast.error(
@@ -97,7 +96,7 @@ const SignInPage: React.FC = () => {
                   autoComplete="email"
                   required
                   className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
-                  placeholder="you@example.com"
+                  placeholder="hello@100xDevs.com"
                   value={formData.email}
                   onChange={handleChange}
                 />
