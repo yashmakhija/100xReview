@@ -54,6 +54,9 @@ export interface ProjectStatus {
   projectDescription: string;
   dueDate: string;
   submittedAt: string;
+  githubUrl: string;
+  deployUrl: string;
+  wsUrl?: string;
 }
 
 // Error handling

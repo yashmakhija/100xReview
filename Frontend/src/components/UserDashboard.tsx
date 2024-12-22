@@ -22,6 +22,7 @@ import { ProjectCard } from "./ProjectCard";
 import { ScheduleItemComponent } from "./ScheduleItemComponent";
 import { CourseSelector } from "./CourseSelector";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 
 const UserDashboard: React.FC = () => {
   const { darkMode, toggleDarkMode } = useDarkMode();
@@ -200,28 +201,42 @@ const UserDashboard: React.FC = () => {
         wsUrl,
       });
 
+      // Create new project status
       const newProjectStatus: ProjectStatus = {
         id: updatedProject.submissionId!,
-        projectId: updatedProject.id,
+        projectId: selectedProject.id,
         status: "PENDING_REVIEW",
-        projectName: updatedProject.name,
-        projectDescription: updatedProject.description,
-        dueDate: updatedProject.dueDate,
+        projectName: selectedProject.name,
+        projectDescription: selectedProject.description,
+        dueDate: selectedProject.dueDate,
         submittedAt: new Date().toISOString(),
+        githubUrl,
+        deployUrl,
+        wsUrl,
       };
 
-      setProjects((prevProjects) =>
-        prevProjects.map((p) =>
-          p.id === updatedProject.id ? { ...p, status: "pending" } : p
-        )
-      );
-      setProjectStatuses((prevStatuses) => [...prevStatuses, newProjectStatus]);
+      // Update both states immediately
+      setProjectStatuses(prevStatuses => [...prevStatuses, newProjectStatus]);
+      
+      // Update user stats
+      setUserStats(prev => ({
+        ...prev,
+        totalSubmissions: prev.totalSubmissions + 1,
+        pendingReviews: prev.pendingReviews + 1,
+        lastSubmission: new Date(),
+        activeStreak: calculateStreak([...projectStatuses, newProjectStatus])
+      }));
 
+      // Close modal and reset form
       setIsModalOpen(false);
       setGithubUrl("");
       setDeployUrl("");
       setWsUrl("");
       setError(null);
+      
+      // Show success toast if you're using toast notifications
+      toast.success("Project submitted successfully!");
+
     } catch (err) {
       console.error("Error submitting project:", err);
       setError("Failed to submit project. Please try again.");
@@ -255,42 +270,44 @@ const UserDashboard: React.FC = () => {
         </div>
       ) : (
         <header
-          className={`py-4 px-6 ${
+          className={`py-4 px-4 sm:px-6 ${
             darkMode ? "bg-gray-800" : "bg-white"
           } shadow-md`}
         >
-          <div className="max-w-7xl mx-auto flex justify-between items-center">
-            <a href="#">
-              <h1 className="text-2xl font-bold">100xDashboard</h1>
-            </a>
-            <div className="flex items-center space-x-4">
-              <CourseSelector
-                courses={courses}
-                selectedCourseId={selectedCourseId}
-                onSelectCourse={setSelectedCourseId}
-                darkMode={darkMode}
-              />
-              <button
-                onClick={toggleDarkMode}
-                className={`p-2 rounded-full ${
-                  darkMode
-                    ? "bg-gray-700 hover:bg-gray-600"
-                    : "bg-gray-200 hover:bg-gray-300"
-                } transition-colors`}
-              >
-                {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-              </button>
-              <button
-                onClick={handleLogout}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md ${
-                  darkMode
-                    ? "bg-red-600 hover:bg-red-700"
-                    : "bg-red-500 hover:bg-red-600"
-                } text-white transition-colors`}
-              >
-                <LogOut size={18} />
-                <span>Logout</span>
-              </button>
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <a href="#" className="flex-shrink-0">
+                <h1 className="text-xl sm:text-2xl font-bold">100xDashboard</h1>
+              </a>
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                <CourseSelector
+                  courses={courses}
+                  selectedCourseId={selectedCourseId}
+                  onSelectCourse={setSelectedCourseId}
+                  darkMode={darkMode}
+                />
+                <button
+                  onClick={toggleDarkMode}
+                  className={`p-2 rounded-full ${
+                    darkMode
+                      ? "bg-gray-700 hover:bg-gray-600"
+                      : "bg-gray-200 hover:bg-gray-300"
+                  } transition-colors`}
+                >
+                  {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-md ${
+                    darkMode
+                      ? "bg-red-600 hover:bg-red-700"
+                      : "bg-red-500 hover:bg-red-600"
+                  } text-white transition-colors`}
+                >
+                  <LogOut size={18} />
+                  <span className="hidden sm:inline">Logout</span>
+                </button>
+              </div>
             </div>
           </div>
         </header>
@@ -299,7 +316,7 @@ const UserDashboard: React.FC = () => {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         {error && <ErrorMessage message={error} />}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 px-4 sm:px-0">
           <div
             className={`${
               darkMode ? "bg-gray-800" : "bg-white"
@@ -434,14 +451,14 @@ const UserDashboard: React.FC = () => {
             darkMode ? "bg-gray-800" : "bg-white"
           } shadow overflow-hidden sm:rounded-lg`}
         >
-          <div className="px-4 py-5 sm:px-6 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
+          <div className="px-4 py-5 sm:px-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-200 dark:border-gray-700">
             <h3 className="text-lg leading-6 font-medium">
               Projects & Schedule
             </h3>
-            <div className="flex space-x-4">
+            <div className="flex space-x-2 sm:space-x-4 w-full sm:w-auto">
               <button
                 onClick={() => setActiveTab("projects")}
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
+                className={`flex-1 sm:flex-none px-3 py-2 rounded-md text-sm font-medium ${
                   activeTab === "projects"
                     ? darkMode
                       ? "bg-blue-600 text-white"
@@ -455,7 +472,7 @@ const UserDashboard: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveTab("schedule")}
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
+                className={`flex-1 sm:flex-none px-3 py-2 rounded-md text-sm font-medium ${
                   activeTab === "schedule"
                     ? darkMode
                       ? "bg-blue-600 text-white"
@@ -475,7 +492,7 @@ const UserDashboard: React.FC = () => {
             ) : (
               <>
                 {activeTab === "projects" && (
-                  <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
                     {projects.map((project) => (
                       <ProjectCard
                         key={project.id}

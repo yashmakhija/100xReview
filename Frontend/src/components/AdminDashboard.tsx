@@ -961,7 +961,7 @@ const AdminDashboard: React.FC = () => {
               <h1 className="text-xl sm:text-2xl font-semibold">
                 Admin Dashboard
               </h1>
-              <div className="flex items-center gap-2 sm:gap-4">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                 <button
                   onClick={toggleDarkMode}
                   className={`p-2 rounded-full ${
@@ -991,7 +991,7 @@ const AdminDashboard: React.FC = () => {
             </div>
 
             {/* Stats grid - make it more responsive */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <div
                 className={`${
                   darkMode ? "bg-zinc-800" : "bg-gray-100"
