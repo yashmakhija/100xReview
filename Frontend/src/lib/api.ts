@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // Base API configuration
-const API_BASE = "http://localhost:8012";
+const API_BASE = "https://100x.classicoder.com";
 
 // Interfaces
 export interface Project {
