@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // Base API configuration
-const API_BASE = "https://100xreview.classicoder.com";
+const API_BASE = "http://localhost:8012";
 
 // Interfaces
 export interface Project {
@@ -109,6 +109,114 @@ export async function signIn(signInData: { email: string; password: string }) {
   return fetchWithAuth(`${API_BASE}/api/auth/login`, {
     method: "POST",
     body: JSON.stringify(signInData),
+  });
+}
+
+export interface SignupResponse {
+  message: string;
+  user?: {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+  };
+  token?: string;
+}
+
+export async function initializeSignup(email: string): Promise<SignupResponse> {
+  return fetchWithAuth(`${API_BASE}/api/auth/signup/init`, {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function verifyOTP(
+  email: string,
+  otp: string
+): Promise<SignupResponse> {
+  return fetchWithAuth(`${API_BASE}/api/auth/signup/verify-otp`, {
+    method: "POST",
+    body: JSON.stringify({ email, otp }),
+  });
+}
+
+export async function completeSignup(userData: {
+  name: string;
+  email: string;
+  password: string;
+  number: string;
+  otp: string;
+}): Promise<SignupResponse> {
+  return fetchWithAuth(`${API_BASE}/api/auth/signup/complete`, {
+    method: "POST",
+    body: JSON.stringify(userData),
+  });
+}
+
+// Password Reset
+export interface PasswordResetResponse {
+  message: string;
+}
+
+export async function initializePasswordReset(
+  email: string
+): Promise<PasswordResetResponse> {
+  const response = await fetch(`${API_BASE}/api/auth/password-reset/init`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to send password reset OTP");
+  }
+  return data;
+}
+
+export async function verifyPasswordResetOTP(
+  email: string,
+  otp: string
+): Promise<PasswordResetResponse> {
+  const response = await fetch(
+    `${API_BASE}/api/auth/password-reset/verify-otp`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, otp }),
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to verify OTP");
+  }
+  return data;
+}
+
+export async function completePasswordReset(
+  email: string,
+  otp: string,
+  newPassword: string
+): Promise<PasswordResetResponse> {
+  const response = await fetch(`${API_BASE}/api/auth/password-reset/complete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, otp, newPassword }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to reset password");
+  }
+  return data;
+}
+
+// Resend OTP
+export async function resendOTP(email: string): Promise<PasswordResetResponse> {
+  return fetchWithAuth(`${API_BASE}/api/auth/signup/resend-otp`, {
+    method: "POST",
+    body: JSON.stringify({ email }),
   });
 }
 
@@ -248,60 +356,7 @@ export async function fetchAllCourses() {
   return fetchWithAuth(`${API_BASE}/api/courses/`);
 }
 
-export async function fetchCourses() {
-  return fetchWithAuth(`${API_BASE}/api/course/my-courses`);
-}
-
-export async function enrollInCourse(courseId: number) {
-  return fetchWithAuth(`${API_BASE}/api/course/enroll`, {
-    method: "POST",
-    body: JSON.stringify({ courseId }),
-  });
-}
-
-// Attendance
-export async function fetchAttendance() {
-  return fetchWithAuth(`${API_BASE}/api/attendance`);
-}
-
-// MAC Addresses
-export async function submitMacAddresses(macAddresses: string[]) {
-  return fetchWithAuth(`${API_BASE}/api/auth/mac-address`, {
-    method: "POST",
-    body: JSON.stringify({
-      macAddresses: macAddresses.filter((mac) => mac.length === 17),
-    }),
-  });
-}
-
-// Onboarding
-export async function checkOnboardingStatus() {
-  return fetchWithAuth(`${API_BASE}/api/onboarding/status`);
-}
-
-export async function completeOnboarding() {
-  return fetchWithAuth(`${API_BASE}/api/onboarding/complete`, {
-    method: "POST",
-  });
-}
-
-// Users
-export async function fetchUsers() {
-  return fetchWithAuth(`${API_BASE}/api/users`);
-}
-
-// User project statuses
-export async function getUserProjectStatuses(): Promise<ProjectStatus[]> {
-  return fetchWithAuth(`${API_BASE}/api/projects/user-project-statuses`);
-}
-
-export async function getSubmittedProjectsCourse(courseId: number) {
-  return fetchWithAuth(
-    `${API_BASE}/api/projects/course/${courseId}/submissions`
-  );
-}
-
-// Schedule routes
+// Schedule Management
 export async function getDailySchedule(
   courseId: string
 ): Promise<ScheduleItem[]> {
@@ -330,7 +385,8 @@ export async function updateDaySchedule(
   scheduleId: number,
   scheduleData: {
     date?: string;
-    items?: { title: string; description: string }[];
+    topic?: string;
+    description?: string;
   }
 ): Promise<ScheduleItem> {
   return fetchWithAuth(`${API_BASE}/api/schedule/${scheduleId}`, {
@@ -345,18 +401,55 @@ export async function deleteDaySchedule(scheduleId: number): Promise<void> {
   });
 }
 
-// Example of using the new error handling
-export async function exampleAPICall() {
-  try {
-    const data = await fetchWithAuth(`${API_BASE}/api/example`);
-    return data;
-  } catch (error) {
-    if (error instanceof APIError) {
-      console.error(`API Error (${error.status}): ${error.message}`);
-      // Handle specific error cases based on status or message
-    } else {
-      console.error("Unexpected error:", error);
-    }
-    throw error;
-  }
+// Course Management
+export async function fetchCourses() {
+  return fetchWithAuth(`${API_BASE}/api/course/my-courses`);
+}
+
+export async function enrollInCourse(courseId: number) {
+  return fetchWithAuth(`${API_BASE}/api/course/enroll`, {
+    method: "POST",
+    body: JSON.stringify({ courseId }),
+  });
+}
+
+// User Management
+export async function fetchUsers() {
+  return fetchWithAuth(`${API_BASE}/api/users`);
+}
+
+export async function getUserProjectStatuses(): Promise<ProjectStatus[]> {
+  return fetchWithAuth(`${API_BASE}/api/projects/user-project-statuses`);
+}
+
+export async function getSubmittedProjectsCourse(courseId: number) {
+  return fetchWithAuth(
+    `${API_BASE}/api/projects/course/${courseId}/submissions`
+  );
+}
+
+// Onboarding
+export async function checkOnboardingStatus() {
+  return fetchWithAuth(`${API_BASE}/api/onboarding/status`);
+}
+
+export async function completeOnboarding() {
+  return fetchWithAuth(`${API_BASE}/api/onboarding/complete`, {
+    method: "POST",
+  });
+}
+
+// MAC Addresses
+export async function submitMacAddresses(macAddresses: string[]) {
+  return fetchWithAuth(`${API_BASE}/api/auth/mac-address`, {
+    method: "POST",
+    body: JSON.stringify({
+      macAddresses: macAddresses.filter((mac) => mac.length === 17),
+    }),
+  });
+}
+
+// Attendance
+export async function fetchAttendance() {
+  return fetchWithAuth(`${API_BASE}/api/attendance`);
 }

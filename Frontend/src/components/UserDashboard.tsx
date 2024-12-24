@@ -216,15 +216,15 @@ const UserDashboard: React.FC = () => {
       };
 
       // Update both states immediately
-      setProjectStatuses(prevStatuses => [...prevStatuses, newProjectStatus]);
-      
+      setProjectStatuses((prevStatuses) => [...prevStatuses, newProjectStatus]);
+
       // Update user stats
-      setUserStats(prev => ({
+      setUserStats((prev) => ({
         ...prev,
         totalSubmissions: prev.totalSubmissions + 1,
         pendingReviews: prev.pendingReviews + 1,
         lastSubmission: new Date(),
-        activeStreak: calculateStreak([...projectStatuses, newProjectStatus])
+        activeStreak: calculateStreak([...projectStatuses, newProjectStatus]),
       }));
 
       // Close modal and reset form
@@ -233,10 +233,9 @@ const UserDashboard: React.FC = () => {
       setDeployUrl("");
       setWsUrl("");
       setError(null);
-      
+
       // Show success toast if you're using toast notifications
       toast.success("Project submitted successfully!");
-
     } catch (err) {
       console.error("Error submitting project:", err);
       setError("Failed to submit project. Please try again.");
@@ -276,8 +275,14 @@ const UserDashboard: React.FC = () => {
         >
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <a href="#" className="flex-shrink-0">
-                <h1 className="text-xl sm:text-2xl font-bold">100xDashboard</h1>
+              <a className="flex gap-2 items-center" href="#">
+                <img
+                  className="size-10 rounded-full"
+                  src="https://appx-wsb-gcp.akamai.net.in/subject/2023-01-17-0.17044360120951185.jpg"
+                />
+                <div className="text-3xl font-bold  bg-gradient-to-r from-blue-400 to-blue-700  inline-block text-transparent bg-clip-text">
+                  100xReview
+                </div>
               </a>
               <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                 <CourseSelector

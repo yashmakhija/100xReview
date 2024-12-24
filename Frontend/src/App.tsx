@@ -10,6 +10,7 @@ import AdminDashboard from "./components/AdminDashboard";
 import ProjectReview from "./components/ProjectReview";
 import SignInPage from "./components/SignInPage";
 import SignUpPage from "./components/SignUpPage";
+import PasswordResetPage from "./components/PasswordResetPage";
 import Onboarding from "./components/Onboarding";
 import { RecoilRoot } from "recoil";
 import { Toaster } from "react-hot-toast";
@@ -22,6 +23,7 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/signin" element={<SignInPage />} />
           <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/password-reset" element={<PasswordResetPage />} />
 
           <Route
             path="/onboarding"

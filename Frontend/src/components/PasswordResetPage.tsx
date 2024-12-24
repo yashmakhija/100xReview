@@ -1,26 +1,23 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock, User, Loader2, Phone } from "lucide-react";
+import { Mail, Lock, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 import {
-  initializeSignup,
-  verifyOTP,
-  completeSignup,
-  resendOTP,
+  initializePasswordReset,
+  verifyPasswordResetOTP,
+  completePasswordReset,
 } from "../lib/api";
 
-const SignUpPage: React.FC = () => {
+const PasswordResetPage: React.FC = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState<"email" | "otp" | "details">("email");
+  const [step, setStep] = useState<"email" | "otp" | "password">("email");
   const [formData, setFormData] = useState({
-    name: "",
     email: "",
-    password: "",
-    confirmPassword: "",
-    phoneNumber: "",
     otp: "",
+    newPassword: "",
+    confirmPassword: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -45,21 +42,14 @@ const SignUpPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const validateForm = () => {
+  const validatePassword = () => {
     const newErrors: Record<string, string> = {};
-
-    if (!formData.name) newErrors.name = "Name is required";
-    if (!formData.otp) newErrors.otp = "OTP is required";
-    if (!formData.password) newErrors.password = "Password is required";
-    else if (formData.password.length < 6)
-      newErrors.password = "Password must be at least 6 characters";
-    if (formData.password !== formData.confirmPassword)
+    if (!formData.newPassword)
+      newErrors.newPassword = "New password is required";
+    else if (formData.newPassword.length < 6)
+      newErrors.newPassword = "Password must be at least 6 characters";
+    if (formData.newPassword !== formData.confirmPassword)
       newErrors.confirmPassword = "Passwords do not match";
-    if (!formData.phoneNumber)
-      newErrors.phoneNumber = "Phone number is required";
-    else if (!/^\d{10}$/.test(formData.phoneNumber))
-      newErrors.phoneNumber = "Invalid phone number";
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -69,23 +59,18 @@ const SignUpPage: React.FC = () => {
     if (validateEmail()) {
       setIsLoading(true);
       try {
-        await initializeSignup(formData.email);
-        toast.success("Verification code sent to your email!");
+        await initializePasswordReset(formData.email);
+        toast.success("Reset code sent to your email!");
         setStep("otp");
-      } catch (error: unknown) {
-        console.error("Signup error:", error);
-        let errorMessage = "Failed to send verification code";
-
-        if (error instanceof Error) {
-          if (error.message.includes("already registered")) {
-            errorMessage = "This email is already registered";
-          } else if (error.message.includes("invalid email")) {
-            errorMessage = "Please enter a valid email address";
-          } else if (error.message.includes("Network")) {
-            errorMessage = "Network error. Please check your connection";
-          }
-        }
-
+      } catch (error) {
+        console.error("Password reset error:", error);
+        // Extract error message from the response
+        const errorMessage =
+          error instanceof Error
+            ? error.message.includes("User not found")
+              ? "No account found with this email address"
+              : error.message
+            : "Failed to send reset code";
         toast.error(errorMessage);
       } finally {
         setIsLoading(false);
@@ -101,91 +86,51 @@ const SignUpPage: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      await verifyOTP(formData.email, formData.otp);
+      await verifyPasswordResetOTP(formData.email, formData.otp);
       toast.success("Code verified successfully!");
-      setStep("details");
-    } catch (error: unknown) {
+      setStep("password");
+    } catch (error) {
       console.error("OTP verification error:", error);
-      let errorMessage = "Invalid verification code";
-
-      if (error instanceof Error) {
-        if (error.message.includes("expired")) {
-          errorMessage = "Verification code has expired";
-        } else if (error.message.includes("Invalid OTP")) {
-          errorMessage = "Invalid verification code";
-        } else if (error.message.includes("No OTP request")) {
-          errorMessage = "Please request a new verification code";
-        }
-      }
-
+      // Extract error message from the response
+      const errorMessage =
+        error instanceof Error
+          ? error.message.includes("Invalid OTP")
+            ? "Invalid verification code"
+            : error.message.includes("OTP expired")
+            ? "Verification code has expired"
+            : error.message
+          : "Invalid code";
       toast.error(errorMessage);
-      setErrors({ otp: errorMessage });
+      setErrors({ otp: "Invalid code" });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleResendOTP = async () => {
-    setIsLoading(true);
-    try {
-      await resendOTP(formData.email);
-      toast.success("New verification code sent!");
-    } catch (error: unknown) {
-      console.error("Resend OTP error:", error);
-      let errorMessage = "Failed to send new code";
-
-      if (error instanceof Error) {
-        if (error.message.includes("too many requests")) {
-          errorMessage = "Please wait before requesting a new code";
-        } else if (error.message.includes("Network")) {
-          errorMessage = "Network error. Please check your connection";
-        }
-      }
-
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
+    if (validatePassword()) {
       setIsLoading(true);
       try {
-        const response = await completeSignup({
-          name: formData.name,
-          email: formData.email.toLowerCase(),
-          password: formData.password,
-          number: formData.phoneNumber,
-          otp: formData.otp,
-        });
-
-        const token = `Bearer ${response.token}`;
-        localStorage.setItem("authorization", token);
-        toast.success("Account created successfully!");
-        navigate("/onboarding");
-      } catch (error: unknown) {
-        console.error("Signup error:", error);
-        let errorMessage = "Failed to create account";
-
-        if (error instanceof Error) {
-          if (error.message.includes("already registered")) {
-            errorMessage = "This email is already registered";
-          } else if (error.message.includes("Invalid OTP")) {
-            errorMessage = "Invalid verification code";
-          } else if (error.message.includes("expired")) {
-            errorMessage = "Verification code has expired";
-          } else if (error.message.includes("Network")) {
-            errorMessage = "Network error. Please check your connection";
-          }
-        }
-
+        await completePasswordReset(
+          formData.email,
+          formData.otp,
+          formData.newPassword
+        );
+        toast.success("Password reset successfully!");
+        navigate("/signin");
+      } catch (error) {
+        console.error("Password reset error:", error);
+        // Extract error message from the response
+        const errorMessage =
+          error instanceof Error
+            ? error.message.includes("Invalid OTP")
+              ? "Invalid verification code"
+              : error.message.includes("OTP expired")
+              ? "Verification code has expired"
+              : error.message
+            : "Failed to reset password";
         toast.error(errorMessage);
-        setErrors((prev) => ({
-          ...prev,
-          form: errorMessage,
-        }));
       } finally {
         setIsLoading(false);
       }
@@ -241,7 +186,7 @@ const SignUpPage: React.FC = () => {
           {isLoading ? (
             <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
-            "Send OTP"
+            "Send Reset Code"
           )}
         </button>
       </div>
@@ -255,7 +200,7 @@ const SignUpPage: React.FC = () => {
           htmlFor="otp"
           className="block text-sm font-medium text-gray-700"
         >
-          Enter OTP
+          Enter Reset Code
         </label>
         <div className="mt-1">
           <input
@@ -269,7 +214,7 @@ const SignUpPage: React.FC = () => {
                 ? "border-red-300 focus:ring-red-500 focus:border-red-500"
                 : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
             } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors`}
-            placeholder="Enter 6-digit OTP"
+            placeholder="Enter 6-digit code"
             value={formData.otp}
             onChange={handleChange}
           />
@@ -285,7 +230,7 @@ const SignUpPage: React.FC = () => {
         )}
       </div>
 
-      <div className="flex flex-col space-y-3">
+      <div>
         <button
           type="submit"
           disabled={isLoading}
@@ -294,168 +239,58 @@ const SignUpPage: React.FC = () => {
           {isLoading ? (
             <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
-            "Verify OTP"
+            "Verify Code"
           )}
-        </button>
-        <button
-          type="button"
-          onClick={handleResendOTP}
-          disabled={isLoading}
-          className="text-sm text-indigo-600 hover:text-indigo-500"
-        >
-          Resend OTP
         </button>
       </div>
     </form>
   );
 
-  const renderDetailsStep = () => (
-    <form className="space-y-6" onSubmit={handleSubmit}>
-      {/* Email Input (Disabled) */}
+  const renderPasswordStep = () => (
+    <form onSubmit={handleResetPassword} className="space-y-6">
       <div>
         <label
-          htmlFor="email"
+          htmlFor="newPassword"
           className="block text-sm font-medium text-gray-700"
         >
-          Email address
-        </label>
-        <div className="mt-1 relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Mail className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            value={formData.email}
-            disabled
-            className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-500 cursor-not-allowed"
-          />
-        </div>
-      </div>
-
-      {/* Name Input */}
-      <div>
-        <label
-          htmlFor="name"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Full Name
-        </label>
-        <div className="mt-1 relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <User className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            id="name"
-            name="name"
-            type="text"
-            required
-            className={`appearance-none block w-full pl-10 pr-3 py-2 border ${
-              errors.name
-                ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
-            } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors`}
-            placeholder="John Doe"
-            value={formData.name}
-            onChange={handleChange}
-          />
-        </div>
-        {errors.name && (
-          <motion.p
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-2 text-sm text-red-600"
-          >
-            {errors.name}
-          </motion.p>
-        )}
-      </div>
-
-      {/* Phone Number Input */}
-      <div>
-        <label
-          htmlFor="phoneNumber"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Phone Number
-        </label>
-        <div className="mt-1 relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Phone className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            id="phoneNumber"
-            name="phoneNumber"
-            type="tel"
-            required
-            className={`appearance-none block w-full pl-10 pr-3 py-2 border ${
-              errors.phoneNumber
-                ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
-            } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors`}
-            placeholder="Enter your phone number"
-            value={formData.phoneNumber}
-            onChange={handleChange}
-            maxLength={10}
-          />
-        </div>
-        {errors.phoneNumber && (
-          <motion.p
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-2 text-sm text-red-600"
-          >
-            {errors.phoneNumber}
-          </motion.p>
-        )}
-      </div>
-
-      {/* Password Input */}
-      <div>
-        <label
-          htmlFor="password"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Password
+          New Password
         </label>
         <div className="mt-1 relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Lock className="h-5 w-5 text-gray-400" />
           </div>
           <input
-            id="password"
-            name="password"
+            id="newPassword"
+            name="newPassword"
             type="password"
             required
             className={`appearance-none block w-full pl-10 pr-3 py-2 border ${
-              errors.password
+              errors.newPassword
                 ? "border-red-300 focus:ring-red-500 focus:border-red-500"
                 : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
             } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors`}
-            placeholder="••••••••••"
-            value={formData.password}
+            placeholder="••••••••"
+            value={formData.newPassword}
             onChange={handleChange}
           />
         </div>
-        {errors.password && (
+        {errors.newPassword && (
           <motion.p
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             className="mt-2 text-sm text-red-600"
           >
-            {errors.password}
+            {errors.newPassword}
           </motion.p>
         )}
       </div>
 
-      {/* Confirm Password Input */}
       <div>
         <label
           htmlFor="confirmPassword"
           className="block text-sm font-medium text-gray-700"
         >
-          Confirm Password
+          Confirm New Password
         </label>
         <div className="mt-1 relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -487,18 +322,6 @@ const SignUpPage: React.FC = () => {
         )}
       </div>
 
-      {/* Form Error Message */}
-      {errors.form && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-3 rounded-md bg-red-50 border border-red-200"
-        >
-          <p className="text-sm text-red-600 text-center">{errors.form}</p>
-        </motion.div>
-      )}
-
-      {/* Submit Button */}
       <div>
         <button
           type="submit"
@@ -508,7 +331,7 @@ const SignUpPage: React.FC = () => {
           {isLoading ? (
             <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
-            "Create Account"
+            "Reset Password"
           )}
         </button>
       </div>
@@ -542,17 +365,17 @@ const SignUpPage: React.FC = () => {
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
           {step === "email"
-            ? "Enter your email"
+            ? "Reset your password"
             : step === "otp"
             ? "Verify your email"
-            : "Complete your profile"}
+            : "Create new password"}
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           {step === "email"
-            ? "We'll send you a verification code"
+            ? "Enter your email to receive a reset code"
             : step === "otp"
             ? "Enter the code sent to your email"
-            : "Fill in your details to complete signup"}
+            : "Choose a strong password"}
         </p>
       </motion.div>
 
@@ -565,10 +388,10 @@ const SignUpPage: React.FC = () => {
         <div className="bg-white/80 backdrop-blur-lg py-8 px-4 shadow-xl shadow-indigo-100/50 sm:rounded-lg sm:px-10 border border-gray-100">
           {step === "email" && renderEmailStep()}
           {step === "otp" && renderOTPStep()}
-          {step === "details" && renderDetailsStep()}
+          {step === "password" && renderPasswordStep()}
 
           <p className="mt-8 text-center text-sm text-gray-600">
-            Already have an account?{" "}
+            Remember your password?{" "}
             <a
               href="/signin"
               className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors"
@@ -582,4 +405,4 @@ const SignUpPage: React.FC = () => {
   );
 };
 
-export default SignUpPage;
+export default PasswordResetPage;

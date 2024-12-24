@@ -79,6 +79,7 @@ interface SubmissionData {
   reviewNotes?: string;
   reviewVideoUrl?: string;
   projectName: string;
+  submissionId?: number;
 }
 
 interface FilterState {
@@ -538,11 +539,14 @@ const AdminDashboard: React.FC = () => {
                           if (submission.isReviewed) {
                             setSelectedReview({
                               ...submission,
-                              projectId:
-                                Number(filter.project) || submission.projectId,
+                              projectId: submission.projectId,
                               projectName:
                                 submission.projectName || "Unknown Project",
-                              courseId: submission.courseId || 1,
+                              courseId: submission.courseId,
+                              submissionId: submission.id,
+                              reviewNotes: submission.reviewNotes,
+                              reviewVideoUrl: submission.reviewVideoUrl,
+                              userName: submission.userName,
                             });
                           } else {
                             navigate(

@@ -70,7 +70,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 }`}
               >
                 Submitted by:{" "}
-                <span className="font-medium">{submission.user.name}</span>
+                <span className="font-medium ">{submission.user.name}</span>
               </p>
               <p
                 className={`text-sm ${
