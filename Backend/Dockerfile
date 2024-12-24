@@ -1,4 +1,4 @@
-FROM node:20-slim
+FROM node:21
 
 
 RUN apt-get update -y && \
