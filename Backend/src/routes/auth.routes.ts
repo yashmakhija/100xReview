@@ -4,10 +4,20 @@ import { requireAuth } from "../middleware";
 
 const router = express.Router();
 
-// Routes
-router.post("/signup", AuthController.signUp); // User Signup
-router.post("/login", AuthController.login); // User Login
-router.post("/mac-address", requireAuth, AuthController.macAddr);
+// Signup routes
+router.post("/signup/init", AuthController.initializeSignup);
+router.post("/signup/verify-otp", AuthController.verifyOTP);
+router.post("/signup/complete", AuthController.verifyAndSignup);
+router.post("/signup/resend-otp", AuthController.resendOTP);
 
+router.post("/password-reset/init", AuthController.initializePasswordReset);
+router.post(
+  "/password-reset/verify-otp",
+  AuthController.verifyPasswordResetOTP
+);
+router.post("/password-reset/complete", AuthController.resetPassword);
+
+router.post("/login", AuthController.login);
+router.post("/mac-address", requireAuth, AuthController.macAddr);
 
 export default router;

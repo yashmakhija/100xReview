@@ -25,6 +25,13 @@ app.use("/api/projects", projectRoutes);
 app.use("/api/course", enrollmentRoutes);
 app.use("/api/schedule", scheduleRoutes);
 
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // app.use("/api/attendance", attendanceRoutes); // Attendance endpoints
 
 export default app;
