@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 // Base API configuration
-const API_BASE = "https://100x.classicoder.com";
+export const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8012";
+export const API_URL = `${API_BASE}/api`;
 
 // Interfaces
 export interface Project {
@@ -80,7 +81,7 @@ async function handleAPIResponse(response: Response) {
 }
 
 // Helper function for authenticated requests
-async function fetchWithAuth(url: string, options: RequestInit = {}) {
+export async function fetchWithAuth(url: string, options: RequestInit = {}) {
   const token = localStorage.getItem("authorization");
   const headers = {
     "Content-Type": "application/json",

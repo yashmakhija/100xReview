@@ -95,31 +95,47 @@ const SignUpPage: React.FC = () => {
 
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.otp.length !== 6) {
-      setErrors({ otp: "Please enter a valid 6-digit code" });
+    if (!formData.otp || formData.otp.length !== 6) {
+      setErrors((prev) => ({
+        ...prev,
+        otp: "Please enter a valid 6-digit code",
+      }));
       return;
     }
+
     setIsLoading(true);
+    setErrors({});
+
     try {
-      await verifyOTP(formData.email, formData.otp);
-      toast.success("Code verified successfully!");
-      setStep("details");
+      await verifyOTP(formData.email.toLowerCase(), formData.otp);
+      toast.success("Email verified successfully!");
+      navigate("/signin");
     } catch (error: unknown) {
       console.error("OTP verification error:", error);
-      let errorMessage = "Invalid verification code";
+      let errorMessage = "Failed to verify OTP. Please try again";
 
       if (error instanceof Error) {
-        if (error.message.includes("expired")) {
-          errorMessage = "Verification code has expired";
+        if (error.message.includes("429")) {
+          errorMessage =
+            "Too many verification attempts. Please try again later.";
         } else if (error.message.includes("Invalid OTP")) {
-          errorMessage = "Invalid verification code";
-        } else if (error.message.includes("No OTP request")) {
-          errorMessage = "Please request a new verification code";
+          errorMessage = "Invalid OTP. Please check and try again.";
+        } else if (error.message.includes("OTP expired")) {
+          errorMessage = "OTP has expired. Please request a new one.";
+        } else if (error.message.includes("Too many requests")) {
+          errorMessage = "Too many attempts. Please try again after some time.";
         }
       }
 
       toast.error(errorMessage);
-      setErrors({ otp: errorMessage });
+
+      setErrors((prev) => ({
+        ...prev,
+        otp:
+          error instanceof Error && error.message.includes("429")
+            ? "Rate limit exceeded. Please wait before trying again"
+            : "Invalid or expired OTP",
+      }));
     } finally {
       setIsLoading(false);
     }
@@ -150,45 +166,53 @@ const SignUpPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      setIsLoading(true);
-      try {
-        const response = await completeSignup({
-          name: formData.name,
-          email: formData.email.toLowerCase(),
-          password: formData.password,
-          number: formData.phoneNumber,
-          otp: formData.otp,
-        });
+    if (!validateForm()) return;
 
-        const token = `Bearer ${response.token}`;
-        localStorage.setItem("authorization", token);
-        toast.success("Account created successfully!");
-        navigate("/onboarding");
-      } catch (error: unknown) {
-        console.error("Signup error:", error);
-        let errorMessage = "Failed to create account";
+    setIsLoading(true);
+    setErrors({});
 
-        if (error instanceof Error) {
-          if (error.message.includes("already registered")) {
-            errorMessage = "This email is already registered";
-          } else if (error.message.includes("Invalid OTP")) {
-            errorMessage = "Invalid verification code";
-          } else if (error.message.includes("expired")) {
-            errorMessage = "Verification code has expired";
-          } else if (error.message.includes("Network")) {
-            errorMessage = "Network error. Please check your connection";
-          }
+    try {
+      await completeSignup({
+        email: formData.email.toLowerCase(),
+        password: formData.password,
+        name: formData.name,
+        number: formData.phoneNumber,
+        otp: formData.otp,
+      });
+
+      toast.success("OTP sent to your email!");
+      setStep("otp");
+    } catch (error: unknown) {
+      console.error("Sign up error:", error);
+      let errorMessage = "Something went wrong. Please try again";
+
+      if (error instanceof Error) {
+        if (error.message.includes("429")) {
+          errorMessage = "Too many signup attempts. Please try again later.";
+        } else if (error.message.includes("Email already registered")) {
+          errorMessage = "Email already registered. Please sign in instead.";
+        } else if (error.message.includes("Too many requests")) {
+          errorMessage = "Too many attempts. Please try again after some time.";
+        } else if (error.message.includes("Network")) {
+          errorMessage = "Network error. Please check your connection";
         }
-
-        toast.error(errorMessage);
-        setErrors((prev) => ({
-          ...prev,
-          form: errorMessage,
-        }));
-      } finally {
-        setIsLoading(false);
       }
+
+      toast.error(errorMessage);
+
+      // Set form-level error with more specific message
+      setErrors((prev) => ({
+        ...prev,
+        form:
+          error instanceof Error && error.message.includes("429")
+            ? "Rate limit exceeded. Please wait before trying again"
+            : error instanceof Error &&
+              error.message.includes("Email already registered")
+            ? "Account already exists. Please sign in"
+            : "Please check your details and try again",
+      }));
+    } finally {
+      setIsLoading(false);
     }
   };
 

@@ -1,23 +1,39 @@
 import express from "express";
 import { AuthController } from "../controllers";
 import { requireAuth } from "../middleware";
+import {
+  authLimiter,
+  otpLimiter,
+  passwordResetLimiter,
+} from "../middleware/rateLimiter";
 
 const router = express.Router();
 
-// Signup routes
-router.post("/signup/init", AuthController.initializeSignup);
-router.post("/signup/verify-otp", AuthController.verifyOTP);
-router.post("/signup/complete", AuthController.verifyAndSignup);
-router.post("/signup/resend-otp", AuthController.resendOTP);
+router.get("/validate", requireAuth, AuthController.validateToken);
 
-router.post("/password-reset/init", AuthController.initializePasswordReset);
+router.post("/signup/init", authLimiter, AuthController.initializeSignup);
+router.post("/signup/verify-otp", otpLimiter, AuthController.verifyOTP);
+router.post("/signup/complete", otpLimiter, AuthController.verifyAndSignup);
+router.post("/signup/resend-otp", otpLimiter, AuthController.resendOTP);
+
+router.post(
+  "/password-reset/init",
+  passwordResetLimiter,
+  AuthController.initializePasswordReset
+);
 router.post(
   "/password-reset/verify-otp",
+  otpLimiter,
   AuthController.verifyPasswordResetOTP
 );
-router.post("/password-reset/complete", AuthController.resetPassword);
+router.post(
+  "/password-reset/complete",
+  passwordResetLimiter,
+  AuthController.resetPassword
+);
 
-router.post("/login", AuthController.login);
+router.post("/login", authLimiter, AuthController.login);
+
 router.post("/mac-address", requireAuth, AuthController.macAddr);
 
 export default router;

@@ -565,3 +565,42 @@ export const resetPassword = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to reset password" });
   }
 };
+
+export const validateToken = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      res.status(401).json({ error: "Invalid token" });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        name: true,
+      },
+    });
+
+    if (!user) {
+      res.status(401).json({ error: "User not found" });
+      return;
+    }
+
+    res.json({
+      valid: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+      },
+    });
+  } catch (error) {
+    console.error("Token validation error:", error);
+    res.status(401).json({ error: "Invalid token" });
+  }
+};
