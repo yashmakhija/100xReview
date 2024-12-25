@@ -37,7 +37,12 @@ jobs:
           password: ${{ secrets.EC2_PASSWORD }}
           script: |
             cd 
-            cd /code
+            ls -a 
+            cd /code || exit 1
+            if [ ! -f "docker-compose.yml" ]; then
+              echo "docker-compose.yml not found"
+              exit 1
+            fi
             docker-compose pull
             docker-compose down
             docker-compose up -d
