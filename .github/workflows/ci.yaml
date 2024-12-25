@@ -39,7 +39,7 @@ jobs:
             cd 
             ls -a 
             cd code || exit 1
-            if [ ! -f "docker-compose.yml" ]; then
+            if [ ! -f "docker-compose.yaml" ]; then
               echo "docker-compose.yml not found"
               exit 1
             fi
