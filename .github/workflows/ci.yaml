@@ -36,6 +36,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           password: ${{ secrets.EC2_PASSWORD }}
           script: |
+            cd 
             cd /code
             docker-compose pull
             docker-compose down
