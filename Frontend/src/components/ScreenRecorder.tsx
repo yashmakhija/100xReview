@@ -196,15 +196,55 @@ const ScreenRecorder: React.FC<ScreenRecorderProps> = ({
     }
   };
 
-  // Capture Audio
+  // Update audio state
+  const toggleAudio = useCallback(async () => {
+    try {
+      if (audioStreamRef.current) {
+        // If we already have an audio stream, toggle its tracks
+        audioStreamRef.current.getAudioTracks().forEach((track) => {
+          track.enabled = !isAudioEnabled;
+        });
+      } else if (!isAudioEnabled) {
+        // If we're unmuting and don't have an audio stream, request one
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+        audioStreamRef.current = stream;
+        stream.getAudioTracks().forEach((track) => {
+          track.enabled = true;
+        });
+      }
+      setIsAudioEnabled(!isAudioEnabled);
+    } catch (error) {
+      console.error("Error toggling audio:", error);
+      if (error instanceof DOMException && error.name === "NotAllowedError") {
+        alert("Please allow microphone access to use audio.");
+      } else {
+        alert(
+          "Failed to toggle audio. Please check your microphone connection."
+        );
+      }
+    }
+  }, [isAudioEnabled]);
+
+  // Update captureAudio function
   const captureAudio = async () => {
     if (!isAudioEnabled) return null;
 
     try {
+      if (audioStreamRef.current) {
+        // Return existing stream if we have one
+        return audioStreamRef.current;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
       });
       audioStreamRef.current = stream;
+      // Ensure the audio track's enabled state matches our isAudioEnabled state
+      stream.getAudioTracks().forEach((track) => {
+        track.enabled = isAudioEnabled;
+      });
       return stream;
     } catch (error) {
       console.error("Audio capture error:", error);
@@ -490,7 +530,7 @@ const ScreenRecorder: React.FC<ScreenRecorderProps> = ({
 
         {/* Audio Toggle */}
         <button
-          onClick={() => setIsAudioEnabled(!isAudioEnabled)}
+          onClick={toggleAudio}
           className={`p-2 rounded-full ${
             isAudioEnabled
               ? "bg-blue-600 text-white"

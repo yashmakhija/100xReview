@@ -962,9 +962,15 @@ const AdminDashboard: React.FC = () => {
           <div className="flex flex-col p-4 max-w-7xl mx-auto">
             {/* Top row with title and controls */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-              <h1 className="text-xl sm:text-2xl font-semibold">
-                Admin Dashboard
-              </h1>
+              <a className="flex gap-2 items-center" href="/admin">
+                <img
+                  className="size-10 rounded-full"
+                  src="https://appx-wsb-gcp.akamai.net.in/subject/2023-01-17-0.17044360120951185.jpg"
+                />
+                <div className="text-3xl font-bold  bg-gradient-to-r from-blue-400 to-blue-700  inline-block text-transparent bg-clip-text">
+                  100xReview
+                </div>
+              </a>
               <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                 <button
                   onClick={toggleDarkMode}

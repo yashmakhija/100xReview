@@ -1,7 +1,16 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useRecoilState, useResetRecoilState } from "recoil";
-import { Github, Globe, Send, ArrowLeft, X, Zap } from "lucide-react";
+import {
+  Github,
+  Globe,
+  Send,
+  ArrowLeft,
+  X,
+  Zap,
+  Upload,
+  CheckCircle,
+} from "lucide-react";
 import {
   getSubmittedProjectsCourse,
   reviewProject,
@@ -43,6 +52,16 @@ const Toast: React.FC<{
   );
 };
 
+// Add ProgressBar component
+const ProgressBar: React.FC<{ progress: number }> = ({ progress }) => (
+  <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+    <div
+      className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+      style={{ width: `${progress}%` }}
+    />
+  </div>
+);
+
 const ProjectReview: React.FC = () => {
   const navigate = useNavigate();
   const { projectId, submissionId } = useParams<{
@@ -65,6 +84,10 @@ const ProjectReview: React.FC = () => {
     message: string;
     type: "success" | "error";
   } | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState<
+    "idle" | "uploading" | "processing" | "success" | "error"
+  >("idle");
 
   const resetSubmission = useResetRecoilState(submissionState);
   const resetReviewNotes = useResetRecoilState(reviewNotesState);
@@ -153,6 +176,8 @@ const ProjectReview: React.FC = () => {
     if (!submission || isSubmitting) return;
     setIsSubmitting(true);
     setValidationErrors({});
+    setUploadStatus("uploading");
+    setUploadProgress(0);
 
     try {
       if (!reviewNotes.trim()) {
@@ -161,6 +186,7 @@ const ProjectReview: React.FC = () => {
           reviewNotes: "Review notes are required",
         }));
         showToast("Review notes are required", "error");
+        setUploadStatus("error");
         return;
       }
 
@@ -171,11 +197,32 @@ const ProjectReview: React.FC = () => {
           type: newRecordingBlob.type,
         });
 
-        const uploadResult = await uploadReviewVideo(submission.id, file);
-        if (uploadResult?.submission?.reviewVideoUrl) {
-          reviewVideoUrl = uploadResult.submission.reviewVideoUrl;
-        } else {
-          throw new Error("Failed to upload video");
+        // Simulate upload progress
+        const uploadProgressInterval = setInterval(() => {
+          setUploadProgress((prev) => {
+            if (prev >= 90) {
+              clearInterval(uploadProgressInterval);
+              return 90;
+            }
+            return prev + 10;
+          });
+        }, 500);
+
+        try {
+          const uploadResult = await uploadReviewVideo(submission.id, file);
+          clearInterval(uploadProgressInterval);
+          setUploadProgress(100);
+          setUploadStatus("processing");
+
+          if (uploadResult?.submission?.reviewVideoUrl) {
+            reviewVideoUrl = uploadResult.submission.reviewVideoUrl;
+            setUploadStatus("success");
+          } else {
+            throw new Error("Failed to upload video");
+          }
+        } catch (error) {
+          clearInterval(uploadProgressInterval);
+          throw error;
         }
       }
 
@@ -185,6 +232,7 @@ const ProjectReview: React.FC = () => {
           reviewVideoUrl: "Review video is required",
         }));
         showToast("Review video is required", "error");
+        setUploadStatus("error");
         return;
       }
 
@@ -201,15 +249,53 @@ const ProjectReview: React.FC = () => {
       localStorage.setItem("reviewSuccess", "true");
       localStorage.setItem("reviewTimestamp", Date.now().toString());
       showToast("Review submitted successfully", "success");
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Give toast time to show
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       navigate("/admin");
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to submit review";
       setError(errorMessage);
       showToast(errorMessage, "error");
+      setUploadStatus("error");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const renderUploadStatus = () => {
+    switch (uploadStatus) {
+      case "uploading":
+        return (
+          <div className="mt-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">
+                Uploading video...
+              </span>
+              <span className="text-sm text-gray-500">{uploadProgress}%</span>
+            </div>
+            <ProgressBar progress={uploadProgress} />
+          </div>
+        );
+      case "processing":
+        return (
+          <div className="mt-4">
+            <div className="flex items-center justify-center space-x-2 text-blue-600">
+              <Upload className="w-5 h-5 animate-bounce" />
+              <span className="text-sm font-medium">Processing video...</span>
+            </div>
+          </div>
+        );
+      case "success":
+        return (
+          <div className="mt-4">
+            <div className="flex items-center justify-center space-x-2 text-green-600">
+              <CheckCircle className="w-5 h-5" />
+              <span className="text-sm font-medium">Upload complete!</span>
+            </div>
+          </div>
+        );
+      default:
+        return null;
     }
   };
 
@@ -310,7 +396,7 @@ const ProjectReview: React.FC = () => {
           <div className="md:w-1/2 p-6 bg-gray-50 border-t md:border-t-0 md:border-l border-gray-200">
             <h2 className="text-2xl font-bold mb-6">Review Submission</h2>
 
-            <div className="mb-6">
+            <div className="mb-6 bg-white p-4 rounded-lg shadow-sm">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Quick Review Templates
               </label>
@@ -334,7 +420,7 @@ const ProjectReview: React.FC = () => {
               </div>
             </div>
 
-            <div className="mb-6">
+            <div className="mb-6 bg-white p-4 rounded-lg shadow-sm">
               <label
                 htmlFor="reviewNotes"
                 className="block text-sm font-medium text-gray-700 mb-2"
@@ -360,26 +446,39 @@ const ProjectReview: React.FC = () => {
               )}
             </div>
 
-            <div className="mb-6">
+            <div className="mb-6 bg-white p-4 rounded-lg shadow-sm">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Screen Recording
               </label>
               <ScreenRecorder onRecordingComplete={handleRecordingComplete} />
+              {renderUploadStatus()}
             </div>
 
             <button
               onClick={handleReviewSubmit}
-              disabled={isSubmitting}
+              disabled={
+                isSubmitting ||
+                uploadStatus === "uploading" ||
+                uploadStatus === "processing"
+              }
               className={`w-full flex items-center justify-center px-4 py-2 rounded-md text-white transition-colors ${
-                isSubmitting
+                isSubmitting ||
+                uploadStatus === "uploading" ||
+                uploadStatus === "processing"
                   ? "bg-blue-400 cursor-not-allowed"
                   : "bg-blue-600 hover:bg-blue-700"
               }`}
             >
-              {isSubmitting ? (
+              {isSubmitting ||
+              uploadStatus === "uploading" ||
+              uploadStatus === "processing" ? (
                 <>
                   <Loading size="small" />
-                  Uploading...
+                  {uploadStatus === "uploading"
+                    ? "Uploading..."
+                    : uploadStatus === "processing"
+                    ? "Processing..."
+                    : "Submitting..."}
                 </>
               ) : (
                 <>

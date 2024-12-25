@@ -109,7 +109,7 @@ const SignUpPage: React.FC = () => {
     try {
       await verifyOTP(formData.email.toLowerCase(), formData.otp);
       toast.success("Email verified successfully!");
-      navigate("/signin");
+      setStep("details");
     } catch (error: unknown) {
       console.error("OTP verification error:", error);
       let errorMessage = "Failed to verify OTP. Please try again";
@@ -180,8 +180,8 @@ const SignUpPage: React.FC = () => {
         otp: formData.otp,
       });
 
-      toast.success("OTP sent to your email!");
-      setStep("otp");
+      toast.success("Account created successfully!");
+      navigate("/signin");
     } catch (error: unknown) {
       console.error("Sign up error:", error);
       let errorMessage = "Something went wrong. Please try again";
@@ -200,7 +200,6 @@ const SignUpPage: React.FC = () => {
 
       toast.error(errorMessage);
 
-      // Set form-level error with more specific message
       setErrors((prev) => ({
         ...prev,
         form:
