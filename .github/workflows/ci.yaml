@@ -38,7 +38,7 @@ jobs:
           script: |
             cd 
             ls -a 
-            cd /code || exit 1
+            cd code || exit 1
             if [ ! -f "docker-compose.yml" ]; then
               echo "docker-compose.yml not found"
               exit 1
