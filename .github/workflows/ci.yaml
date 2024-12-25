@@ -36,6 +36,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           password: ${{ secrets.EC2_PASSWORD }}
           script: |
-            docker pull yashmakhija/100xreview:latest
-            docker stop 100xreview || true
-            docker rm 100xreview || true
+            cd /code
+            docker-compose pull
+            docker-compose down
+            docker-compose up -d

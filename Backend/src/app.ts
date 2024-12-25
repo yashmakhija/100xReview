@@ -29,7 +29,7 @@ app.use("/api/schedule", scheduleRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({
-    status: "healthy",
+    status: "health is okay",
     timestamp: new Date().toISOString(),
   });
 });
