@@ -36,4 +36,6 @@ router.post("/login", authLimiter, AuthController.login);
 
 router.post("/mac-address", requireAuth, AuthController.macAddr);
 
+router.post("/change-password", requireAuth, AuthController.changePassword);
+
 export default router;

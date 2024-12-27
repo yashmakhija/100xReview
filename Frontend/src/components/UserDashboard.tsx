@@ -12,6 +12,7 @@ import {
   Award,
   Briefcase,
   LogOut,
+  User,
 } from "lucide-react";
 import { useDarkMode } from "../utils/darkMode";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -300,6 +301,20 @@ const UserDashboard: React.FC = () => {
                   } transition-colors`}
                 >
                   {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+                </button>
+                <button
+                  onClick={() => navigate("/profile")}
+                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-md ${
+                    darkMode
+                      ? "bg-blue-600 hover:bg-blue-700 text-white"
+                      : "bg-blue-500 hover:bg-blue-600 text-white"
+                  } transition-colors`}
+                >
+                  <div className="relative">
+                    <User size={18} className="text-white" />
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full"></span>
+                  </div>
+                  <span className="hidden sm:inline font-medium">Profile</span>
                 </button>
                 <button
                   onClick={handleLogout}
@@ -708,8 +723,14 @@ const UserDashboard: React.FC = () => {
               </button>
             </div>
             {selectedVideoUrl && (
-              <div className="aspect-w-16 aspect-h-9 mb-4">
-                <video src={selectedVideoUrl} controls className="rounded-lg" />
+              <div className="relative w-full" style={{ paddingTop: "56.25%" }}>
+                <iframe
+                  src={selectedVideoUrl}
+                  className="absolute inset-0 w-full h-full rounded-lg"
+                  loading="lazy"
+                  allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                  allowFullScreen
+                />
               </div>
             )}
             {selectedReview && selectedReview.reviewNotes && (

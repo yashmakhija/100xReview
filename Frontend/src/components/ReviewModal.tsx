@@ -32,11 +32,15 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ review, onClose }) => {
         {review.reviewVideoUrl && (
           <div className="mb-6">
             <h3 className="text-lg font-semibold mb-2">Review Video</h3>
-            <video
-              src={review.reviewVideoUrl}
-              controls
-              className="w-full rounded-lg"
-            />
+            <div className="relative w-full" style={{ paddingTop: "56.25%" }}>
+              <iframe
+                src={review.reviewVideoUrl}
+                className="absolute inset-0 w-full h-full rounded-lg"
+                loading="lazy"
+                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                allowFullScreen
+              />
+            </div>
           </div>
         )}
         {review.reviewNotes && (

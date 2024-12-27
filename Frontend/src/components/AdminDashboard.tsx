@@ -16,6 +16,7 @@ import {
   Zap,
   CheckCircle,
   Clock3,
+  User,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ScheduleManager from "./ScheduleManager";
@@ -987,6 +988,20 @@ const AdminDashboard: React.FC = () => {
                   )}
                 </button>
                 <button
+                  onClick={() => navigate("/profile")}
+                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-md ${
+                    darkMode
+                      ? "bg-blue-600 hover:bg-blue-700 text-white"
+                      : "bg-blue-500 hover:bg-blue-600 text-white"
+                  } transition-colors`}
+                >
+                  <div className="relative">
+                    <User size={18} className="text-white" />
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full"></span>
+                  </div>
+                  <span className="hidden sm:inline font-medium">Profile</span>
+                </button>
+                <button
                   onClick={handleLogout}
                   className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-md ${
                     darkMode
@@ -1174,7 +1189,12 @@ const AdminDashboard: React.FC = () => {
 
       {selectedReview && (
         <ReviewModal
-          review={selectedReview}
+          review={{
+            reviewNotes: selectedReview.reviewNotes,
+            reviewVideoUrl: selectedReview.reviewVideoUrl,
+            projectName: selectedReview.projectName,
+            userName: selectedReview.userName,
+          }}
           onClose={() => setSelectedReview(null)}
         />
       )}

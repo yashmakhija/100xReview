@@ -5,252 +5,172 @@ const path = require("path");
 
 dotenv.config();
 
-const BUNNY_CDN_API_KEY = process.env.BUNNY_CDN_API_KEY;
-const BUNNY_CDN_STORAGE_ZONE = process.env.BUNNY_CDN_STORAGE_ZONE;
+const BUNNY_STREAM_API_KEY = process.env.BUNNY_STREAM_API_KEY;
+const BUNNY_LIBRARY_ID = process.env.BUNNY_LIBRARY_ID;
+const BUNNY_BASE_URL = "https://video.bunnycdn.com/library";
 
 /**
- * Function to preview a BunnyCDN file.
- * @param {string} fileName - The name of the file to preview.
- * @returns {Promise<string | null>} - Returns the file URL if successful, otherwise null.
+ * Creates a video object in the Bunny Stream library
+ * @param {string} title - The title of the video
+ * @returns {Promise<Object>} - Returns the created video object
  */
-async function previewBunnyCDNFile(fileName) {
-  if (!BUNNY_CDN_API_KEY || !BUNNY_CDN_STORAGE_ZONE) {
-    throw new Error("Bunny CDN API key or storage zone is not set");
-  }
-
+async function createVideo(title) {
   try {
-    const fileUrl = `https://${BUNNY_CDN_STORAGE_ZONE}.b-cdn.net/100xreviews/${fileName}`;
-    const response = await axios.head(fileUrl, {
-      headers: {
-        AccessKey: BUNNY_CDN_API_KEY,
-      },
-    });
-
-    if (response.status === 200) {
-      console.log("Preview file is accessible on Bunny CDN");
-      return fileUrl;
-    } else {
-      throw new Error(
-        `Failed to access preview file on Bunny CDN. Status: ${response.status}`
-      );
-    }
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.error(
-        "Error previewing file on Bunny CDN:",
-        error.response?.data || error.message
-      );
-    } else {
-      console.error("Error previewing file on Bunny CDN:", error);
-    }
-    return null;
-  }
-}
-
-/**
- * Function to get a BunnyCDN file.
- * @param {string} fileName - The name of the file to get.
- * @returns {Promise<Buffer | null>} - Returns the file content as a buffer if successful, otherwise null.
- */
-async function getBunnyCDNFile(fileName) {
-  if (!BUNNY_CDN_API_KEY || !BUNNY_CDN_STORAGE_ZONE) {
-    throw new Error("Bunny CDN API key or storage zone is not set");
-  }
-
-  try {
-    const fileUrl = `https://${BUNNY_CDN_STORAGE_ZONE}.b-cdn.net/100xreviews/${fileName}`;
-    const response = await axios.get(fileUrl, {
-      headers: {
-        AccessKey: BUNNY_CDN_API_KEY,
-      },
-      responseType: "arraybuffer",
-    });
-
-    if (response.status === 200) {
-      console.log("File retrieved successfully from Bunny CDN");
-      return response.data;
-    } else {
-      throw new Error(
-        `Failed to retrieve file from Bunny CDN. Status: ${response.status}`
-      );
-    }
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.error(
-        "Error retrieving file from Bunny CDN:",
-        error.response?.data || error.message
-      );
-    } else {
-      console.error("Error retrieving file from Bunny CDN:", error);
-    }
-    return null;
-  }
-}
-
-/**
- * Create a folder in BunnyCDN if it doesn't exist
- * @param {string} folderPath - The folder path to create
- */
-async function createFolderIfNotExists(folderPath) {
-  try {
-    console.log(`Checking/Creating folder: ${folderPath}`);
-    const response = await axios.put(
-      `https://storage.bunnycdn.com/${BUNNY_CDN_STORAGE_ZONE}/${folderPath}/`,
-      null,
+    const response = await axios.post(
+      `${BUNNY_BASE_URL}/${BUNNY_LIBRARY_ID}/videos`,
+      { title },
       {
         headers: {
-          AccessKey: BUNNY_CDN_API_KEY,
+          AccessKey: BUNNY_STREAM_API_KEY,
+          "Content-Type": "application/json",
         },
       }
     );
-    console.log(`Folder ${folderPath} created or already exists`);
-    return true;
+    console.log("Video object created:", response.data);
+    return response.data;
   } catch (error) {
-    console.error(`Error creating folder ${folderPath}:`, error.message);
-    return false;
+    console.error(
+      "Error creating video:",
+      error.response?.data || error.message
+    );
+    throw error;
   }
 }
 
 /**
- * Run detailed diagnostics for BunnyCDN.
+ * Uploads a video to Bunny Stream
+ * @param {Buffer|fs.ReadStream} videoData - The video data to upload
+ * @param {string} videoId - The ID of the video to upload to
+ * @returns {Promise<Object>} - Returns the upload response
+ */
+async function uploadVideo(videoData, videoId) {
+  try {
+    const response = await axios.put(
+      `${BUNNY_BASE_URL}/${BUNNY_LIBRARY_ID}/videos/${videoId}`,
+      videoData,
+      {
+        headers: {
+          AccessKey: BUNNY_STREAM_API_KEY,
+          "Content-Type": "application/octet-stream",
+        },
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
+      }
+    );
+    console.log("Video uploaded successfully");
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error uploading video:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+}
+
+/**
+ * Gets the status of a video
+ * @param {string} videoId - The ID of the video to check
+ * @returns {Promise<Object>} - Returns the video status
+ */
+async function getVideoStatus(videoId) {
+  try {
+    const response = await axios.get(
+      `${BUNNY_BASE_URL}/${BUNNY_LIBRARY_ID}/videos/${videoId}`,
+      {
+        headers: {
+          AccessKey: BUNNY_STREAM_API_KEY,
+        },
+      }
+    );
+    console.log("Video status:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error getting video status:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+}
+
+/**
+ * Gets the HTML embed code for a video
+ * @param {string} videoId - The ID of the video
+ * @returns {string} - Returns the HTML embed code
+ */
+function getVideoEmbedCode(videoId) {
+  return `<iframe src="https://iframe.mediadelivery.net/embed/${BUNNY_LIBRARY_ID}/${videoId}" loading="lazy" style="border: none; position: absolute; top: 0; height: 100%; width: 100%;" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowfullscreen="true"></iframe>`;
+}
+
+/**
+ * Gets the direct video URL
+ * @param {string} videoId - The ID of the video
+ * @returns {string} - Returns the direct video URL
+ */
+function getVideoUrl(videoId) {
+  return `https://iframe.mediadelivery.net/play/${BUNNY_LIBRARY_ID}/${videoId}`;
+}
+
+/**
+ * Run diagnostics and test video upload
  */
 async function runDiagnostics() {
-  console.log("Running BunnyCDN Detailed Diagnostics");
+  console.log("Running Bunny Stream API Diagnostics");
   console.log(
     "API Key (first 4 characters):",
-    BUNNY_CDN_API_KEY ? BUNNY_CDN_API_KEY.substring(0, 4) + "..." : "Not set"
+    BUNNY_STREAM_API_KEY
+      ? BUNNY_STREAM_API_KEY.substring(0, 4) + "..."
+      : "Not set"
   );
-  console.log(
-    "API Key length:",
-    BUNNY_CDN_API_KEY ? BUNNY_CDN_API_KEY.length : "N/A"
-  );
-  console.log("Storage Zone:", BUNNY_CDN_STORAGE_ZONE || "Not set");
+  console.log("Library ID:", BUNNY_LIBRARY_ID || "Not set");
 
-  if (!BUNNY_CDN_API_KEY || !BUNNY_CDN_STORAGE_ZONE) {
-    console.error("Error: BunnyCDN API key or storage zone is not set");
+  if (!BUNNY_STREAM_API_KEY || !BUNNY_LIBRARY_ID) {
+    console.error("Error: Bunny Stream API key or Library ID is not set");
     return;
   }
 
-  // First create the folder
-  const folderCreated = await createFolderIfNotExists("100xreviews");
-  if (!folderCreated) {
-    console.error(
-      "Failed to create/verify folder structure. Aborting upload test."
-    );
-    return;
-  }
-
-  const testFilePath = path.join(__dirname, "test_file.txt"); // Path to your test file
-
-  console.log("testFilePath", testFilePath);
-  if (!fs.existsSync(testFilePath)) {
-    fs.writeFileSync(
-      testFilePath,
-      "This is a test file for BunnyCDN diagnostics."
-    );
-  }
-
-  const testFileName = `new_fod${Date.now()}.txt`;
-  console.log("Uploading test file:", testFileName);
-
-  await testRequest(
-    "PUT",
-    `https://storage.bunnycdn.com/${BUNNY_CDN_STORAGE_ZONE}/100xreviews/${testFileName}`,
-    fs.createReadStream(testFilePath)
-  );
-
-  console.log(
-    "\nDiagnostics complete. If all tests failed, please check your API key and storage zone settings."
-  );
-}
-
-/**
- * Test BunnyCDN requests.
- * @param {string} method - HTTP method to use.
- * @param {string} url - URL for the request.
- * @param {any} data - Request body data (optional).
- */
-async function testRequest(method, url, data = null) {
-  console.log(`\nTesting ${method} request to: ${url}`);
   try {
-    const config = {
-      method,
-      url,
-      headers: {
-        AccessKey: BUNNY_CDN_API_KEY,
-        "Content-Type": "application/octet-stream",
-      },
-      data,
-    };
+    // Test with the provided testing1.mp4 file
+    const testFilePath = path.join(__dirname, "testing1.mp4");
 
-    const response = await axios(config);
-    console.log("Request successful!");
-    console.log("Status:", response.status);
-    console.log(
-      "Response data:",
-      typeof response.data === "string"
-        ? response.data.substring(0, 100)
-        : response.data
-    );
-  } catch (error) {
-    console.error("Request failed:");
-    if (axios.isAxiosError(error)) {
-      console.error("Status:", error.response?.status);
-      console.error("Response data:", error.response?.data);
-      console.error("Request config:", {
-        url: error.config?.url,
-        method: error.config?.method,
-        headers: error.config?.headers,
-      });
-    } else {
-      console.error(error);
+    if (!fs.existsSync(testFilePath)) {
+      console.error("testing1.mp4 file not found in the current directory");
+      return;
     }
+
+    // Create video object
+    console.log("\nStep 1: Creating video object...");
+    const video = await createVideo("Test Video " + Date.now());
+    const videoId = video.guid;
+    console.log("Video ID:", videoId);
+
+    // Upload video
+    console.log("\nStep 2: Uploading video...");
+    const videoStream = fs.createReadStream(testFilePath);
+    await uploadVideo(videoStream, videoId);
+
+    // Check status
+    console.log("\nStep 3: Checking video status...");
+    let status;
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    do {
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds between checks
+      status = await getVideoStatus(videoId);
+      console.log("Current status:", status.status);
+      attempts++;
+    } while (status.status !== "encoded" && attempts < maxAttempts);
+
+    // Get URLs
+    console.log("\nVideo URLs:");
+    console.log("Embed Code:", getVideoEmbedCode(videoId));
+    console.log("Direct URL:", getVideoUrl(videoId));
+  } catch (error) {
+    console.error("Diagnostics failed:", error);
   }
 }
 
-/**
- * Wrapper test function to execute specific tests.
- * @param {string} type - Type of test to run.
- * @param {string} [fileName] - Optional file name for preview tests.
- */
-async function test(type, fileName) {
-  switch (type) {
-    case "diagnostics":
-      await runDiagnostics();
-      break;
-    case "preview":
-      if (!fileName) {
-        console.error("File name is required for preview test.");
-        return;
-      }
-      const previewResult = await previewBunnyCDNFile(fileName);
-      console.log("Preview result:", previewResult);
-      break;
-    case "get":
-      if (!fileName) {
-        console.error("File name is required for get test.");
-        return;
-      }
-      const fileContent = await getBunnyCDNFile(fileName);
-      if (fileContent) {
-        console.log(
-          "File content retrieved:",
-          fileContent.toString().substring(0, 100)
-        );
-      }
-      break;
-    default:
-      console.error(
-        "Unknown test type. Use 'diagnostics', 'preview', or 'get'."
-      );
-  }
-}
-
-// Example: Run the test function with "diagnostics", "preview", or "get"
-test("diagnostics"); // Run diagnostics
-test("preview", "example_file.txt"); // Preview a specific file
-test("get", "example_file.txt"); // Get a specific file
-
-/**
- * Note: Only users with the API key can access the BunnyCDN API. Ensure that the key is securely stored and not exposed to unauthorized users.
- */
+// Run the diagnostics
+runDiagnostics();

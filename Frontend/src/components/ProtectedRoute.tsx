@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 const API_URL =
-  import.meta.env.VITE_API_URL || "https://api.review.100xdevs.com/";
+  import.meta.env.VITE_API_URL || "https://api.review.100xdevs.com";
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,

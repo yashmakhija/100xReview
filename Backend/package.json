@@ -21,14 +21,16 @@
     "@types/multer": "^1.4.12",
     "@types/node": "^22.10.1",
     "@types/nodemailer": "^6.4.17",
+    "@types/postmark": "^1.4.1",
     "eslint": "^8.57.1",
     "nodemon": "^3.1.7",
     "prettier": "^3.4.1",
+    "prisma": "^6.2.0-dev.9",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.2"
   },
   "dependencies": {
-    "@prisma/client": "^6.2.0-dev.5",
+    "@prisma/client": "^6.2.0-dev.9",
     "aws-sdk": "^2.1692.0",
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
@@ -39,7 +41,7 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.16",
-    "prisma": "^6.2.0-dev.5",
+    "postmark": "^4.0.5",
     "zod": "^3.24.1"
   }
 }

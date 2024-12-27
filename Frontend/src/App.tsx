@@ -15,6 +15,7 @@ import UserDashboard from "./components/UserDashboard";
 import AdminDashboard from "./components/AdminDashboard";
 import ProjectReview from "./components/ProjectReview";
 import Onboarding from "./components/Onboarding";
+import Profile from "./components/Profile";
 
 function App() {
   return (
@@ -85,6 +86,16 @@ function App() {
               <Layout>
                 <ProtectedRoute requiredRole="USER">
                   <Onboarding />
+                </ProtectedRoute>
+              </Layout>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <Layout>
+                <ProtectedRoute requiredRole="USER">
+                  <Profile />
                 </ProtectedRoute>
               </Layout>
             }

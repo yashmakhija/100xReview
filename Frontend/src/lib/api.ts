@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // Base API configuration
-export const API_BASE = "https://api.review.100xdevs.com";
+export const API_BASE = "http://localhost:8012";
 export const API_URL = `${API_BASE}`;
 
 // Interfaces
@@ -58,6 +58,41 @@ export interface ProjectStatus {
   githubUrl: string;
   deployUrl: string;
   wsUrl?: string;
+}
+
+export interface UserProfile {
+  id: number;
+  name: string;
+  number: string;
+  email: string;
+  role: string;
+  createdAt: string;
+  updatedAt: string;
+  biodata: {
+    bio: string | null;
+    techStack: string[];
+    resume: string | null;
+  };
+  stats: {
+    totalProjects: number;
+    completedProjects: number;
+    pendingProjects: number;
+    activeStreak: number;
+  };
+  recentSubmissions: {
+    projectName: string;
+    projectDescription: string;
+    submittedAt: string;
+    status: "REVIEWED" | "PENDING_REVIEW";
+    githubUrl: string;
+    deployUrl: string | null;
+  }[];
+}
+
+interface UpdateBiodataRequest {
+  bio?: string;
+  techStack?: string[];
+  resume?: string;
 }
 
 // Error handling
@@ -454,3 +489,58 @@ export async function submitMacAddresses(macAddresses: string[]) {
 export async function fetchAttendance() {
   return fetchWithAuth(`${API_BASE}/api/attendance`);
 }
+
+export const getUserProfile = async (): Promise<UserProfile> => {
+  return fetchWithAuth(`${API_BASE}/api/users/profile`);
+};
+
+export const updateUserBiodata = async (
+  data: UpdateBiodataRequest
+): Promise<{ message: string; biodata: unknown }> => {
+  return fetchWithAuth(`${API_BASE}/api/users/profile/biodata`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+};
+
+export const changePassword = async (
+  currentPassword: string,
+  newPassword: string,
+  confirmPassword: string
+): Promise<{ message: string }> => {
+  if (newPassword !== confirmPassword) {
+    throw new Error("Passwords do not match");
+  }
+
+  if (newPassword.length < 6) {
+    throw new Error("New password must be at least 6 characters long");
+  }
+
+  try {
+    const response = await fetchWithAuth(
+      `${API_BASE}/api/auth/change-password`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to change password");
+    }
+
+    return data;
+  } catch (error) {
+    throw error instanceof Error
+      ? error
+      : new Error("Failed to change password");
+  }
+};
