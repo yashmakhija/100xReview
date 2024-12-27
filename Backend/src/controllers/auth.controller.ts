@@ -54,7 +54,7 @@ async function sendOTPEmail(email: string, otp: string) {
       To: email,
       Subject: "Verify Your Email - 100xReview",
       TextBody: `Your verification code is: ${otp}. This code will expire in 10 minutes.`,
-      HTMLBody: emailTemplate,
+      HtmlBody: emailTemplate,
     });
     return { success: true, message: "OTP sent successfully" };
   } catch (error) {
@@ -102,7 +102,7 @@ async function sendPasswordResetEmail(email: string, otp: string) {
       To: email,
       Subject: "Password Reset - 100xReview",
       TextBody: `Your password reset code is: ${otp}. This code will expire in 10 minutes.`,
-      HTMLBody: emailTemplate,
+      HtmlBody: emailTemplate,
     });
     return { success: true, message: "Password reset OTP sent successfully" };
   } catch (error) {
