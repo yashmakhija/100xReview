@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // Base API configuration
-export const API_BASE = "http://api.review.100xdevs.com";
+export const API_BASE = "https://localhost:8012";
 export const API_URL = `${API_BASE}`;
 
 // Interfaces
