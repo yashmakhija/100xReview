@@ -10,14 +10,12 @@ import {
   onboardingRoutes,
 } from "./routes";
 import cors from "cors";
-import { apiLimiter } from "./middleware/rateLimiter";
 
 const app = express();
 
 app.use(cors());
 
 app.use(express.json());
-app.use(apiLimiter);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/onboarding", onboardingRoutes);

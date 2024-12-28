@@ -11,10 +11,10 @@ const router = express.Router();
 
 router.get("/validate", requireAuth, AuthController.validateToken);
 
-router.post("/signup/init", authLimiter, AuthController.initializeSignup);
-router.post("/signup/verify-otp", otpLimiter, AuthController.verifyOTP);
-router.post("/signup/complete", otpLimiter, AuthController.verifyAndSignup);
-router.post("/signup/resend-otp", otpLimiter, AuthController.resendOTP);
+router.post("/signup/init", AuthController.initializeSignup);
+router.post("/signup/verify-otp", AuthController.verifyOTP);
+router.post("/signup/complete", AuthController.verifyAndSignup);
+router.post("/signup/resend-otp", AuthController.resendOTP);
 
 router.post(
   "/password-reset/init",
@@ -26,11 +26,7 @@ router.post(
   otpLimiter,
   AuthController.verifyPasswordResetOTP
 );
-router.post(
-  "/password-reset/complete",
-  passwordResetLimiter,
-  AuthController.resetPassword
-);
+router.post("/password-reset/complete", AuthController.resetPassword);
 
 router.post("/login", authLimiter, AuthController.login);
 
