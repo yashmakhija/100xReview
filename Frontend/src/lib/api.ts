@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 // Base API configuration
-export const API_BASE = "http://localhost:8012";
+export const API_BASE =
+  import.meta.env.VITE_API_URL || "https://api.review.100xdevs.com";
 export const API_URL = `${API_BASE}`;
 
 // Interfaces
