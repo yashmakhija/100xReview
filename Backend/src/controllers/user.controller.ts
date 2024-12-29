@@ -185,3 +185,103 @@ export const getAllUsers = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to fetch users" });
   }
 };
+
+export const updateAdminRole = async (req: Request, res: Response) => {
+  const { userId } = req.body;
+
+  if (!userId) {
+    res.status(400).json({
+      error: "Please provide userId in the request body",
+    });
+    return;
+  }
+
+  try {
+    const findUser = await prisma.user.findUnique({
+      where: {
+        id: Number(userId),
+      },
+    });
+
+    if (!findUser) {
+      res.status(404).json({
+        error: "User not found",
+      });
+      return;
+    }
+
+    const updateUser = await prisma.user.update({
+      where: {
+        id: findUser.id,
+      },
+      data: {
+        role: "ADMIN",
+      },
+    });
+
+    res.status(200).json({
+      message: "User role has been updated to Admin",
+      user: {
+        id: updateUser.id,
+        email: updateUser.email,
+        role: updateUser.role,
+      },
+    });
+    return;
+  } catch (error) {
+    console.error("Error updating user role:", error);
+    res.status(500).json({
+      error: "Failed to update user role",
+    });
+    return;
+  }
+};
+
+export const updateUserRole = async (req: Request, res: Response) => {
+  const { userId } = req.body;
+
+  if (!userId) {
+    res.status(400).json({
+      error: "Please provide userId in the request body",
+    });
+    return;
+  }
+  try {
+    const findUser = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+    if (!findUser) {
+      res.status(404).json({
+        error: "User doesn't exist",
+      });
+      return;
+    }
+
+    const updateRole = await prisma.user.update({
+      where: {
+        id: findUser.id,
+      },
+      data: {
+        role: "USER",
+      },
+    });
+
+    res.status(200).json({
+      message: "Admin role has been updated to User",
+      user: {
+        id: updateRole.id,
+        email: updateRole.email,
+        role: updateRole.role,
+      },
+    });
+    return;
+  } catch (error) {
+    console.error("Error updating user role:", error);
+    res.status(500).json({
+      error: "Failed to update user role",
+    });
+    return;
+  }
+};

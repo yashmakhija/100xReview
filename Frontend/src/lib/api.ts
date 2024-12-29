@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // Base API configuration
-export const API_BASE = "https://api.review.100xdevs.com";
+export const API_BASE = "http://localhost:8012";
 export const API_URL = `${API_BASE}`;
 
 // Interfaces
@@ -13,6 +13,7 @@ export interface Project {
   description: string;
   dueDate: string;
   courseId: number;
+  notion?: string;
   status: "not_submitted" | "pending" | "completed";
   submission: ProjectSubmission | null;
 }
@@ -317,6 +318,7 @@ export async function createProject(projectData: {
   description: string;
   dueDate: string;
   courseId: number;
+  notion: string;
 }): Promise<Project> {
   const result: Project = await fetchWithAuth(
     `${API_BASE}/api/projects/create`,
@@ -542,5 +544,51 @@ export const changePassword = async (
     throw error instanceof Error
       ? error
       : new Error("Failed to change password");
+  }
+};
+
+// Add promoteToAdmin function
+export const promoteToAdmin = async (
+  userId: number
+): Promise<{
+  message: string;
+  user: { id: number; email: string; role: string };
+}> => {
+  try {
+    const response = await fetchWithAuth(`${API_BASE}/api/users/Admin-role`, {
+      method: "POST",
+      body: JSON.stringify({ userId }),
+    });
+
+    console.log("Admin promotion response:", response);
+    return response;
+  } catch (error) {
+    console.error("Error in promoteToAdmin:", error);
+    throw error instanceof APIError
+      ? error
+      : new APIError("Failed to promote user to admin", 500);
+  }
+};
+
+// Add demoteToUser function
+export const demoteToUser = async (
+  userId: number
+): Promise<{
+  message: string;
+  user: { id: number; email: string; role: string };
+}> => {
+  try {
+    const response = await fetchWithAuth(`${API_BASE}/api/users/user-role`, {
+      method: "POST",
+      body: JSON.stringify({ userId }),
+    });
+
+    console.log("User demotion response:", response);
+    return response;
+  } catch (error) {
+    console.error("Error in demoteToUser:", error);
+    throw error instanceof APIError
+      ? error
+      : new APIError("Failed to change user role", 500);
   }
 };

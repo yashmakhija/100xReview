@@ -50,7 +50,7 @@ export const getProjectsByCourse = async (req: AuthRequest, res: Response) => {
 
 // Create a Project (Admin Only)
 export const createProject = async (req: AuthRequest, res: Response) => {
-  const { name, description, dueDate, courseId } = req.body;
+  const { name, description, dueDate, courseId, notion } = req.body;
   const user = req.user as { id: number; role: string };
 
   try {
@@ -76,6 +76,7 @@ export const createProject = async (req: AuthRequest, res: Response) => {
         description,
         dueDate: new Date(dueDate),
         courseId: Number(courseId),
+        notion,
       },
     });
 

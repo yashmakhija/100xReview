@@ -5,10 +5,8 @@ import { requireAuth, requireRole } from "../middleware";
 const router = express.Router();
 
 // Public routes (if any)
-
-// Protected routes (require authentication)
-router.get("/profile", requireAuth, UserController.getUserProfile); // Get current user's profile
-router.put("/profile/biodata", requireAuth, UserController.updateUserBiodata); // Update current user's biodata
+router.get("/profile", requireAuth, UserController.getUserProfile);
+router.put("/profile/biodata", requireAuth, UserController.updateUserBiodata);
 
 // Admin routes
 router.get(
@@ -16,7 +14,19 @@ router.get(
   requireAuth,
   requireRole("ADMIN"),
   UserController.getUserProfile
-); // Admin: Get any user's profile
-router.get("/", requireAuth, requireRole("ADMIN"), UserController.getAllUsers); // Admin: Get all users
+);
+router.get("/", requireAuth, requireRole("ADMIN"), UserController.getAllUsers);
+router.post(
+  "/Admin-role",
+  requireAuth,
+  requireRole("ADMIN"),
+  UserController.updateAdminRole
+);
+router.post(
+  "/user-role",
+  requireAuth,
+  requireRole("ADMIN"),
+  UserController.updateUserRole
+);
 
 export default router;

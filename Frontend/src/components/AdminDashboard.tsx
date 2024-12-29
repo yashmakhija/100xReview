@@ -28,6 +28,9 @@ import {
   Project,
   getSubmittedProjects,
   createProject,
+  promoteToAdmin,
+  demoteToUser,
+  getUserProfile,
 } from "../lib/api";
 import ReviewModal from "./ReviewModal";
 import { toast } from "react-hot-toast";
@@ -114,6 +117,28 @@ const AdminDashboard: React.FC = () => {
   const [showAddProject, setShowAddProject] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const [userSearch, setUserSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<"ALL" | "ADMIN" | "USER">("ALL");
+
+  useEffect(() => {
+    const validateAdminAccess = async () => {
+      try {
+        const userProfile = await getUserProfile();
+        if (userProfile.role !== "ADMIN") {
+          toast.error("Unauthorized: Admin access required");
+          navigate("/");
+          return;
+        }
+        setLoading(false);
+      } catch (error) {
+        console.error("Error validating admin access:", error);
+        toast.error("Failed to validate admin access");
+        navigate("/");
+      }
+    };
+
+    validateAdminAccess();
+  }, [navigate]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -616,8 +641,106 @@ const AdminDashboard: React.FC = () => {
   };
 
   const renderUsersSection = () => {
+    const handleRoleChange = async (
+      userId: number,
+      userName: string,
+      newRole: "ADMIN" | "USER"
+    ) => {
+      try {
+        const response =
+          newRole === "ADMIN"
+            ? await promoteToAdmin(userId)
+            : await demoteToUser(userId);
+
+        // Update local state
+        setUsers((prevUsers) =>
+          prevUsers.map((user) =>
+            user.id === userId ? { ...user, role: newRole } : user
+          )
+        );
+
+        toast.success(
+          response.message ||
+            `${userName}'s role has been updated to ${newRole}`,
+          {
+            duration: 4000,
+            position: "top-right",
+            style: {
+              background: darkMode ? "#27272a" : "#fff",
+              color: darkMode ? "#fff" : "#000",
+              border: `1px solid ${darkMode ? "#3f3f46" : "#e5e7eb"}`,
+            },
+          }
+        );
+      } catch (error) {
+        console.error("Error changing user role:", error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : `Failed to change user role to ${newRole}`;
+        toast.error(errorMessage, {
+          duration: 4000,
+          position: "top-right",
+          style: {
+            background: darkMode ? "#27272a" : "#fff",
+            color: darkMode ? "#fff" : "#000",
+            border: `1px solid ${darkMode ? "#3f3f46" : "#e5e7eb"}`,
+          },
+        });
+      }
+    };
+
+    // Filter users based on search and role
+    const filteredUsers = usersWithStats.filter((user) => {
+      const matchesSearch =
+        user.name.toLowerCase().includes(userSearch.toLowerCase()) ||
+        user.email.toLowerCase().includes(userSearch.toLowerCase());
+      const matchesRole = roleFilter === "ALL" || user.role === roleFilter;
+      return matchesSearch && matchesRole;
+    });
+
     return (
-      <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-6">
+        {/* Search and Filter Bar */}
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          <div className="flex-1 w-full sm:max-w-md">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search users by name or email..."
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                className={`w-full pl-10 pr-4 py-2 rounded-lg border ${
+                  darkMode
+                    ? "bg-zinc-800 border-zinc-700 text-white"
+                    : "bg-white border-gray-200"
+                }`}
+              />
+              <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            {["ALL", "ADMIN", "USER"].map((role) => (
+              <button
+                key={role}
+                onClick={() => setRoleFilter(role as "ALL" | "ADMIN" | "USER")}
+                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                  roleFilter === role
+                    ? darkMode
+                      ? "bg-white text-black"
+                      : "bg-black text-white"
+                    : darkMode
+                    ? "bg-zinc-800 text-white hover:bg-zinc-700"
+                    : "bg-gray-100 text-black hover:bg-gray-200"
+                }`}
+              >
+                {role}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Users Table */}
         <div
           className={`rounded-lg border ${
             darkMode ? "border-zinc-800" : "border-gray-200"
@@ -627,26 +750,23 @@ const AdminDashboard: React.FC = () => {
             <table className="w-full">
               <thead className={darkMode ? "bg-zinc-800/50" : "bg-gray-50"}>
                 <tr>
-                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-medium">
+                  <th className="px-4 py-3 text-left text-xs font-medium">
                     User
                   </th>
-                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-medium">
+                  <th className="px-4 py-3 text-left text-xs font-medium">
                     Email
                   </th>
-                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-medium">
+                  <th className="px-4 py-3 text-left text-xs font-medium">
                     Role
                   </th>
-                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-medium">
-                    Total Submissions
+                  <th className="px-4 py-3 text-left text-xs font-medium">
+                    Stats
                   </th>
-                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-medium">
-                    Completed
+                  <th className="px-4 py-3 text-left text-xs font-medium">
+                    Last Active
                   </th>
-                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-medium">
-                    Pending
-                  </th>
-                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-medium">
-                    Last Submission
+                  <th className="px-4 py-3 text-left text-xs font-medium">
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -655,65 +775,131 @@ const AdminDashboard: React.FC = () => {
                   darkMode ? "divide-zinc-800" : "divide-gray-200"
                 }`}
               >
-                {usersWithStats.map((user) => (
-                  <tr
-                    key={user.id}
-                    className={`text-xs sm:text-sm ${
-                      darkMode ? "hover:bg-zinc-800/50" : "hover:bg-gray-50"
-                    } transition-colors`}
-                  >
-                    <td className="px-3 sm:px-6 py-2 sm:py-4">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                            darkMode ? "bg-zinc-800" : "bg-gray-100"
-                          }`}
-                        >
-                          {user.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="font-medium">{user.name}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-3 sm:px-6 py-2 sm:py-4 text-sm">
-                      {user.email}
-                    </td>
-                    <td className="px-3 sm:px-6 py-2 sm:py-4">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          darkMode
-                            ? "bg-purple-100 text-purple-800"
-                            : "bg-blue-100 text-blue-800"
-                        }`}
-                      >
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="px-3 sm:px-6 py-2 sm:py-4 text-sm">
-                      {user.totalSubmissions}
-                    </td>
-                    <td className="px-3 sm:px-6 py-2 sm:py-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        {user.completedSubmissions}
-                      </span>
-                    </td>
-                    <td className="px-3 sm:px-6 py-2 sm:py-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                        {user.pendingSubmissions}
-                      </span>
-                    </td>
-                    <td className="px-3 sm:px-6 py-2 sm:py-4 text-sm">
-                      {user.lastSubmission
-                        ? user.lastSubmission.toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })
-                        : "No submissions"}
+                {filteredUsers.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-4 py-8 text-center text-sm text-gray-500"
+                    >
+                      No users found matching your search criteria.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredUsers.map((user) => (
+                    <tr
+                      key={user.id}
+                      className={`${
+                        darkMode ? "hover:bg-zinc-800/50" : "hover:bg-gray-50"
+                      } transition-colors`}
+                    >
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
+                              darkMode ? "bg-zinc-800" : "bg-gray-100"
+                            }`}
+                          >
+                            {user.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{user.name}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-sm">{user.email}</td>
+                      <td className="px-4 py-4">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            user.role === "ADMIN"
+                              ? "bg-purple-100 text-purple-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {user.role}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2 text-sm">
+                            <span
+                              className={`${
+                                darkMode ? "text-zinc-400" : "text-gray-500"
+                              }`}
+                            >
+                              Total:
+                            </span>
+                            <span className="font-medium">
+                              {user.totalSubmissions}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">
+                              <CheckCircle className="w-3 h-3" />
+                              {user.completedSubmissions}
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                              <Clock3 className="w-3 h-3" />
+                              {user.pendingSubmissions}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-sm">
+                        {user.lastSubmission ? (
+                          <div className="flex flex-col">
+                            <span>
+                              {user.lastSubmission.toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </span>
+                            <span
+                              className={`text-xs ${
+                                darkMode ? "text-zinc-400" : "text-gray-500"
+                              }`}
+                            >
+                              {user.lastSubmission.toLocaleTimeString("en-US", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </div>
+                        ) : (
+                          <span
+                            className={`text-sm ${
+                              darkMode ? "text-zinc-400" : "text-gray-500"
+                            }`}
+                          >
+                            No activity
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-4">
+                        <button
+                          onClick={() =>
+                            handleRoleChange(
+                              user.id,
+                              user.name,
+                              user.role === "ADMIN" ? "USER" : "ADMIN"
+                            )
+                          }
+                          className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
+                            user.role === "ADMIN"
+                              ? darkMode
+                                ? "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20"
+                                : "bg-blue-100 text-blue-800 hover:bg-blue-200"
+                              : darkMode
+                              ? "bg-purple-500/10 text-purple-500 hover:bg-purple-500/20"
+                              : "bg-purple-100 text-purple-800 hover:bg-purple-200"
+                          }`}
+                        >
+                          Make {user.role === "ADMIN" ? "User" : "Admin"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -728,6 +914,7 @@ const AdminDashboard: React.FC = () => {
       description: "",
       dueDate: "",
       courseId: courses[0]?.id || 0,
+      notion: "",
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -831,6 +1018,25 @@ const AdminDashboard: React.FC = () => {
                 }`}
                 rows={3}
                 placeholder="Enter project description"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Notion Link <span className="text-gray-400">(Optional)</span>
+              </label>
+              <input
+                type="url"
+                value={projectData.notion}
+                onChange={(e) =>
+                  setProjectData((prev) => ({ ...prev, notion: e.target.value }))
+                }
+                className={`w-full p-2 rounded-md border ${
+                  darkMode
+                    ? "bg-zinc-800 border-zinc-700 text-white"
+                    : "bg-white border-gray-200"
+                }`}
+                placeholder="Enter Notion documentation link (optional)"
               />
             </div>
 
