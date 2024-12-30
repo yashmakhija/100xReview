@@ -399,7 +399,17 @@ export async function fetchAllCourses() {
 export async function getDailySchedule(
   courseId: string
 ): Promise<ScheduleItem[]> {
-  return fetchWithAuth(`${API_BASE}/api/schedule/daily/${courseId}`);
+  try {
+    const response = await fetchWithAuth(`${API_BASE}/api/schedule/daily/${courseId}`);
+    if (!Array.isArray(response)) {
+      console.warn('Unexpected response format:', response);
+      return [];
+    }
+    return response;
+  } catch (error) {
+    console.error('Error in getDailySchedule:', error);
+    throw error;
+  }
 }
 
 export async function getWeeklySchedule(
@@ -593,3 +603,43 @@ export const demoteToUser = async (
       : new APIError("Failed to change user role", 500);
   }
 };
+
+// Add this interface
+export interface EditProjectData {
+  title: string;
+  description: string;
+  dueDate: string;
+  notionUrl: string;
+}
+
+// Add this function
+export async function editProject(projectId: number, projectData: EditProjectData) {
+  try {
+    const response = await fetchWithAuth(`${API_BASE}/api/projects/edit-project/${projectId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: projectData.title,
+        description: projectData.description,
+        dueDate: projectData.dueDate,
+        notionUrl: projectData.notionUrl,
+      }),
+    });
+
+    if (!response.id) {
+      throw new Error(response.error || 'Failed to update project');
+    }
+
+    return response;
+  } catch (error) {
+    console.error("Error editing project:", error);
+    throw error instanceof APIError
+      ? error
+      : new APIError(
+          error instanceof Error ? error.message : "Failed to edit project",
+          500
+        );
+  }
+}

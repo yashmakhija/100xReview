@@ -55,4 +55,11 @@ router.get(
   ProjectController.getUserProjectStatuses
 );
 
+router.put(
+  "/edit-project/:id",
+  requireAuth,
+  requireRole("ADMIN"),
+  ProjectController.editProject
+);
+
 export default router;

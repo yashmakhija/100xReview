@@ -11,12 +11,15 @@ import {
   Filter,
   LogOut,
   Calendar,
+  Clock,
   Github,
   Globe,
   Zap,
   CheckCircle,
   Clock3,
   User,
+  Pencil,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ScheduleManager from "./ScheduleManager";
@@ -31,6 +34,7 @@ import {
   promoteToAdmin,
   demoteToUser,
   getUserProfile,
+  editProject,
 } from "../lib/api";
 import ReviewModal from "./ReviewModal";
 import { toast } from "react-hot-toast";
@@ -119,6 +123,9 @@ const AdminDashboard: React.FC = () => {
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [userSearch, setUserSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"ALL" | "ADMIN" | "USER">("ALL");
+  const [editingProject, setEditingProject] = useState<ProjectWithSubmissions | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCourse, setSelectedCourse] = useState("");
 
   useEffect(() => {
     const validateAdminAccess = async () => {
@@ -908,6 +915,105 @@ const AdminDashboard: React.FC = () => {
     );
   };
 
+  const renderEditProjectsSection = () => {
+    const filteredProjects = projects.filter(project => {
+      const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          project.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCourse = !selectedCourse || project.courseId.toString() === selectedCourse;
+      return matchesSearch && matchesCourse;
+    });
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Manage Projects</h2>
+          <button
+            onClick={() => setShowAddProject(true)}
+            className={`px-4 py-2 rounded-md flex items-center gap-2 ${
+              darkMode ? 'bg-white text-black' : 'bg-black text-white'
+            } hover:opacity-90`}
+          >
+            <Plus className="h-4 w-4" />
+            Add Project
+          </button>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="Search projects..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={`w-full pl-10 pr-4 py-2 rounded-md border ${
+                darkMode ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-gray-200'
+              }`}
+            />
+            <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+          </div>
+
+          <select
+            value={selectedCourse}
+            onChange={(e) => setSelectedCourse(e.target.value)}
+            className={`w-48 px-4 py-2 rounded-md border ${
+              darkMode ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-gray-200'
+            }`}
+          >
+            <option value="">All Courses</option>
+            {courses.map((course) => (
+              <option key={course.id} value={course.id}>
+                {course.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          {filteredProjects.map((project) => (
+            <div
+              key={project.id}
+              className={`p-4 rounded-lg border ${
+                darkMode ? 'bg-zinc-800/50 border-zinc-700' : 'bg-white border-gray-200'
+              } hover:border-blue-500 transition-colors`}
+            >
+              <div className="flex justify-between items-start mb-3">
+                <h3 className="font-semibold truncate">{project.name}</h3>
+                <button
+                  onClick={() => setEditingProject(project)}
+                  className="p-2 rounded-md hover:bg-blue-500/10 text-blue-500"
+                  title="Edit Project"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+              </div>
+              
+              <p className={`text-sm mb-3 line-clamp-2 ${
+                darkMode ? 'text-zinc-400' : 'text-gray-600'
+              }`}>
+                {project.description}
+              </p>
+
+              <div className="flex flex-wrap gap-2 text-sm">
+                <span className={`px-2 py-1 rounded-full ${
+                  darkMode ? 'bg-zinc-700 text-zinc-300' : 'bg-gray-100 text-gray-600'
+                }`}>
+                  Due: {new Date(project.dueDate).toLocaleDateString()}
+                </span>
+                <span className={`px-2 py-1 rounded-full ${
+                  project.submissions?.length
+                    ? 'bg-blue-500/10 text-blue-500'
+                    : 'bg-gray-500/10 text-gray-500'
+                }`}>
+                  {project.submissions?.length || 0} submissions
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const AddProjectModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const [projectData, setProjectData] = useState({
       name: "",
@@ -1110,6 +1216,155 @@ const AdminDashboard: React.FC = () => {
                 }`}
               >
                 Create Project
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
+  const EditProjectModal: React.FC<{
+    project: ProjectWithSubmissions;
+    onClose: () => void;
+  }> = ({ project, onClose }) => {
+    const [projectData, setProjectData] = useState({
+      title: project.name,
+      description: project.description,
+      dueDate: new Date(project.dueDate).toISOString().split("T")[0],
+      notionUrl: project.notion || "",
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsSubmitting(true);
+
+      try {
+        await editProject(project.id, projectData);
+
+        // Refresh projects list
+        const updatedProjects = await fetchAllProjects();
+        setProjects(updatedProjects);
+
+        toast.success("Project updated successfully!", {
+          duration: 4000,
+          position: "top-right",
+          style: {
+            background: darkMode ? "#27272a" : "#fff",
+            color: darkMode ? "#fff" : "#000",
+            border: `1px solid ${darkMode ? "#3f3f46" : "#e5e7eb"}`,
+          },
+        });
+
+        onClose();
+      } catch (error) {
+        console.error("Error updating project:", error);
+        toast.error(
+          error instanceof Error ? error.message : "Failed to update project. Please try again.", 
+          {
+            duration: 4000,
+            position: "top-right",
+            style: {
+              background: darkMode ? "#27272a" : "#fff",
+              color: darkMode ? "#fff" : "#000",
+              border: `1px solid ${darkMode ? "#3f3f46" : "#e5e7eb"}`,
+            },
+          }
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className={`${darkMode ? "bg-zinc-900" : "bg-white"} rounded-lg p-6 w-full max-w-md`}>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Edit Project</h2>
+            <button
+              onClick={onClose}
+              className={`p-2 rounded-full hover:bg-opacity-80 ${
+                darkMode ? "hover:bg-zinc-800" : "hover:bg-gray-100"
+              }`}
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Project Name</label>
+              <input
+                type="text"
+                required
+                value={projectData.title}
+                onChange={(e) => setProjectData(prev => ({ ...prev, title: e.target.value }))}
+                className={`w-full p-2 rounded-md border ${
+                  darkMode ? "bg-zinc-800 border-zinc-700" : "bg-white border-gray-200"
+                }`}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Description</label>
+              <textarea
+                required
+                value={projectData.description}
+                onChange={(e) => setProjectData(prev => ({ ...prev, description: e.target.value }))}
+                className={`w-full p-2 rounded-md border ${
+                  darkMode ? "bg-zinc-800 border-zinc-700" : "bg-white border-gray-200"
+                }`}
+                rows={3}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Due Date</label>
+              <input
+                type="date"
+                required
+                value={projectData.dueDate}
+                onChange={(e) => setProjectData(prev => ({ ...prev, dueDate: e.target.value }))}
+                className={`w-full p-2 rounded-md border ${
+                  darkMode ? "bg-zinc-800 border-zinc-700" : "bg-white border-gray-200"
+                }`}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Notion Link <span className="text-gray-400">(Optional)</span>
+              </label>
+              <input
+                type="url"
+                value={projectData.notionUrl}
+                onChange={(e) => setProjectData(prev => ({ ...prev, notionUrl: e.target.value }))}
+                className={`w-full p-2 rounded-md border ${
+                  darkMode ? "bg-zinc-800 border-zinc-700" : "bg-white border-gray-200"
+                }`}
+                placeholder="https://notion.so/..."
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isSubmitting}
+                className={`px-4 py-2 rounded-md ${
+                  darkMode ? "bg-zinc-800 hover:bg-zinc-700" : "bg-gray-100 hover:bg-gray-200"
+                } ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className={`px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 
+                  ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                {isSubmitting ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </form>
@@ -1362,7 +1617,7 @@ const AdminDashboard: React.FC = () => {
           >
             <div className="p-3 sm:p-4 md:p-6">
               <div className="flex flex-wrap gap-2 mb-4 sm:mb-6">
-                {["schedule", "projects", "users"].map((tab) => (
+                {["schedule", "projects", "edit-projects", "users"].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -1376,7 +1631,7 @@ const AdminDashboard: React.FC = () => {
                         : "bg-gray-100 text-black hover:bg-gray-200"
                     }`}
                   >
-                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    {tab.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                   </button>
                 ))}
               </div>
@@ -1384,7 +1639,7 @@ const AdminDashboard: React.FC = () => {
               <div className="overflow-x-auto">
                 <div className="inline-block min-w-full align-middle">
                   {activeTab === "projects" && renderProjectSection()}
-                  {activeTab === "schedule" && renderScheduleSection()}
+                  {activeTab === "edit-projects" && renderEditProjectsSection()}
                   {activeTab === "users" && renderUsersSection()}
                 </div>
               </div>
@@ -1406,6 +1661,12 @@ const AdminDashboard: React.FC = () => {
       )}
       {showAddProject && (
         <AddProjectModal onClose={() => setShowAddProject(false)} />
+      )}
+      {editingProject && (
+        <EditProjectModal
+          project={editingProject}
+          onClose={() => setEditingProject(null)}
+        />
       )}
     </div>
   );

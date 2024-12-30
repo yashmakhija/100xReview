@@ -460,3 +460,55 @@ export const getAllProjectsForAdmin = async (
     res.status(500).json({ error: "Failed to fetch projects" });
   }
 };
+
+export const editProject = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { title, description, dueDate, notionUrl } = req.body;
+
+  if (!id) {
+    res.status(400).json({
+      msg: `Project id not found`,
+    });
+    return;
+  }
+
+  try {
+    const projectId = parseInt(id, 10);
+
+    const projectFind = await prisma.project.findUnique({
+      where: {
+        id: projectId,
+      },
+    });
+
+    if (!projectFind) {
+      res.status(400).json({
+        msg: `Project not found`,
+      });
+      return;
+    }
+
+    const updateProject = await prisma.project.update({
+      where: {
+        id: projectId,
+      },
+      data: {
+        name: title,
+        description: description,
+        dueDate: new Date(dueDate),
+        notion: notionUrl,
+      },
+    });
+
+    res.status(200).json({
+      id: updateProject.id,
+      name: updateProject.name,
+      description: updateProject.description,
+      dueDate: updateProject.dueDate,
+      notion: updateProject.notion,
+    });
+  } catch (err) {
+    console.error("Error updating project:", err);
+    res.status(500).json({ error: "Failed to update project" });
+  }
+};
