@@ -210,13 +210,29 @@ const ProjectReview: React.FC = () => {
 
         try {
           const uploadResult = await uploadReviewVideo(submission.id, file);
+          
+          if (uploadResult.status === 'processing') {
+            // Video is being processed, show processing state
+            setUploadStatus("processing");
+            // Poll for completion or show processing message
+            showToast("Video upload in progress. You can leave this page.", "success");
+            
+            // Optional: Set a timeout to move forward after a few seconds
+            setTimeout(() => {
+              setUploadProgress(100);
+              setUploadStatus("success");
+              navigate("/admin");
+            }, 3000);
+            
+            return;
+          }
+
           clearInterval(uploadProgressInterval);
           setUploadProgress(100);
-          setUploadStatus("processing");
+          setUploadStatus("success");
 
           if (uploadResult?.submission?.reviewVideoUrl) {
             reviewVideoUrl = uploadResult.submission.reviewVideoUrl;
-            setUploadStatus("success");
           } else {
             throw new Error("Failed to upload video");
           }
@@ -226,31 +242,34 @@ const ProjectReview: React.FC = () => {
         }
       }
 
-      if (!reviewVideoUrl) {
-        setValidationErrors((prev) => ({
-          ...prev,
-          reviewVideoUrl: "Review video is required",
-        }));
-        showToast("Review video is required", "error");
-        setUploadStatus("error");
-        return;
+      // Only proceed with review if we're not in processing state
+      if (uploadStatus !== "processing") {
+        if (!reviewVideoUrl) {
+          setValidationErrors((prev) => ({
+            ...prev,
+            reviewVideoUrl: "Review video is required",
+          }));
+          showToast("Review video is required", "error");
+          setUploadStatus("error");
+          return;
+        }
+
+        await reviewProject(submission.id, reviewNotes, reviewVideoUrl);
+
+        setSubmission({
+          ...submission,
+          isReviewed: true,
+          reviewNotes,
+          reviewVideoUrl,
+        });
+
+        setNewRecordingBlob(null);
+        localStorage.setItem("reviewSuccess", "true");
+        localStorage.setItem("reviewTimestamp", Date.now().toString());
+        showToast("Review submitted successfully", "success");
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        navigate("/admin");
       }
-
-      await reviewProject(submission.id, reviewNotes, reviewVideoUrl);
-
-      setSubmission({
-        ...submission,
-        isReviewed: true,
-        reviewNotes,
-        reviewVideoUrl,
-      });
-
-      setNewRecordingBlob(null);
-      localStorage.setItem("reviewSuccess", "true");
-      localStorage.setItem("reviewTimestamp", Date.now().toString());
-      showToast("Review submitted successfully", "success");
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      navigate("/admin");
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to submit review";

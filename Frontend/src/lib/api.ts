@@ -368,18 +368,39 @@ export async function uploadReviewVideo(submissionId: number, videoFile: File) {
   formData.append("video", videoFile);
 
   const token = localStorage.getItem("authorization");
-  const response = await fetch(
-    `${API_BASE}/api/projects/review/${submissionId}/video`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: token || "",
-      },
-      body: formData,
-    }
-  );
+  
+  try {
+    const response = await fetch(
+      `${API_BASE}/api/projects/review/${submissionId}/video`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: token || "",
+        },
+        body: formData,
+      }
+    );
 
-  return handleAPIResponse(response);
+    const data = await response.json();
+    
+    // Handle both immediate and completion responses
+    if (response.status === 202) {
+      return {
+        message: data.message,
+        status: 'processing',
+        submissionId: data.submissionId
+      };
+    }
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to upload video');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error uploading video:', error);
+    throw new Error(error instanceof Error ? error.message : 'Failed to upload video');
+  }
 }
 
 // Courses
