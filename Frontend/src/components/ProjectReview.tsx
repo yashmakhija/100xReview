@@ -8,8 +8,9 @@ import {
   ArrowLeft,
   X,
   Zap,
-  Upload,
   CheckCircle,
+  Star,
+  StarOff,
 } from "lucide-react";
 import {
   getSubmittedProjectsCourse,
@@ -27,6 +28,7 @@ import {
 } from "../atoms/projectReviewAtoms";
 import { Submission } from "../types/submission";
 import Loading from "./Loader";
+import { LoadingSpinner } from "./LoadingSpinner";
 
 // Toast Component
 const Toast: React.FC<{
@@ -62,6 +64,42 @@ const ProgressBar: React.FC<{ progress: number }> = ({ progress }) => (
   </div>
 );
 
+// Add StarRating component
+const StarRating: React.FC<{
+  rating: number;
+  onRatingChange: (rating: number) => void;
+  disabled?: boolean;
+}> = ({ rating, onRatingChange, disabled = false }) => {
+  const [hover, setHover] = useState<number | null>(null);
+
+  return (
+    <div className="flex items-center space-x-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          disabled={disabled}
+          onClick={() => onRatingChange(star)}
+          onMouseEnter={() => setHover(star)}
+          onMouseLeave={() => setHover(null)}
+          className={`focus:outline-none transition-colors ${
+            disabled ? "cursor-default" : "cursor-pointer hover:scale-110"
+          }`}
+        >
+          {(hover || rating) >= star ? (
+            <Star className="w-8 h-8 text-yellow-400 fill-yellow-400" />
+          ) : (
+            <StarOff className="w-8 h-8 text-gray-300" />
+          )}
+        </button>
+      ))}
+      <span className="ml-2 text-gray-600 font-medium">
+        {rating > 0 ? `${rating}/5` : "Select rating"}
+      </span>
+    </div>
+  );
+};
+
 const ProjectReview: React.FC = () => {
   const navigate = useNavigate();
   const { projectId, submissionId } = useParams<{
@@ -84,10 +122,11 @@ const ProjectReview: React.FC = () => {
     message: string;
     type: "success" | "error";
   } | null>(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<
     "idle" | "uploading" | "processing" | "success" | "error"
   >("idle");
+  const [rating, setRating] = useState<number>(0);
 
   const resetSubmission = useResetRecoilState(submissionState);
   const resetReviewNotes = useResetRecoilState(reviewNotesState);
@@ -132,20 +171,32 @@ const ProjectReview: React.FC = () => {
           (sub: Submission) => sub.id === Number(submissionId)
         );
         if (foundSubmission) {
-          setSubmission(foundSubmission);
-          setReviewNotes(foundSubmission.reviewNotes || "");
+          setSubmission({
+            ...foundSubmission,
+            rating: foundSubmission.rating || null,
+            reviewNotes: foundSubmission.reviewNotes || null,
+            reviewVideoUrl: foundSubmission.reviewVideoUrl || null
+          } as Submission);
+          
+          // Set existing review data if available
+          if (foundSubmission.isReviewed) {
+            setReviewNotes(foundSubmission.reviewNotes || "");
+            setRating(foundSubmission.rating || 0);
+          }
         } else {
           setError("Submission not found");
         }
       } catch (error) {
-        setError("Failed to fetch submission");
         console.error("Error fetching submission:", error);
+        setError("Failed to fetch submission");
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchSubmission();
+    if (projectId && submissionId) {
+      fetchSubmission();
+    }
 
     return () => {
       resetSubmission();
@@ -170,152 +221,163 @@ const ProjectReview: React.FC = () => {
 
   const handleRecordingComplete = (blob: Blob) => {
     setNewRecordingBlob(blob);
+    setUploadStatus("idle");
   };
 
   const handleReviewSubmit = async () => {
     if (!submission || isSubmitting) return;
     setIsSubmitting(true);
     setValidationErrors({});
-    setUploadStatus("uploading");
-    setUploadProgress(0);
 
     try {
+      // Validate required fields
       if (!reviewNotes.trim()) {
         setValidationErrors((prev) => ({
           ...prev,
           reviewNotes: "Review notes are required",
         }));
         showToast("Review notes are required", "error");
-        setUploadStatus("error");
+        setIsSubmitting(false);
         return;
       }
 
-      let reviewVideoUrl = submission.reviewVideoUrl;
+      if (!rating || rating === 0) {
+        setValidationErrors((prev) => ({
+          ...prev,
+          rating: "Rating is required",
+        }));
+        showToast("Rating is required", "error");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Get the current review video URL or use the existing one
+      let reviewVideoUrl = null;
 
       if (newRecordingBlob) {
-        const file = new File([newRecordingBlob], "review.webm", {
-          type: newRecordingBlob.type,
-        });
-
-        // Simulate upload progress
-        const uploadProgressInterval = setInterval(() => {
-          setUploadProgress((prev) => {
-            if (prev >= 90) {
-              clearInterval(uploadProgressInterval);
-              return 90;
-            }
-            return prev + 10;
-          });
-        }, 500);
-
         try {
+          setUploadStatus("uploading");
+          const file = new File([newRecordingBlob], "review.webm", {
+            type: newRecordingBlob.type,
+          });
+
           const uploadResult = await uploadReviewVideo(submission.id, file);
-          
-          if (uploadResult.status === 'processing') {
-            // Video is being processed, show processing state
-            setUploadStatus("processing");
-            // Poll for completion or show processing message
-            showToast("Video upload in progress. You can leave this page.", "success");
-            
-            // Optional: Set a timeout to move forward after a few seconds
-            setTimeout(() => {
-              setUploadProgress(100);
-              setUploadStatus("success");
-              navigate("/admin");
-            }, 3000);
-            
-            return;
-          }
 
-          clearInterval(uploadProgressInterval);
-          setUploadProgress(100);
-          setUploadStatus("success");
-
-          if (uploadResult?.submission?.reviewVideoUrl) {
+          if (
+            uploadResult?.success &&
+            uploadResult?.submission?.reviewVideoUrl
+          ) {
             reviewVideoUrl = uploadResult.submission.reviewVideoUrl;
+            setUploadStatus("success");
           } else {
-            throw new Error("Failed to upload video");
+            throw new Error("Failed to get video URL after upload");
           }
         } catch (error) {
-          clearInterval(uploadProgressInterval);
-          throw error;
-        }
-      }
-
-      // Only proceed with review if we're not in processing state
-      if (uploadStatus !== "processing") {
-        if (!reviewVideoUrl) {
-          setValidationErrors((prev) => ({
-            ...prev,
-            reviewVideoUrl: "Review video is required",
-          }));
-          showToast("Review video is required", "error");
           setUploadStatus("error");
+          showToast(
+            "Video upload failed: " +
+              (error instanceof Error ? error.message : "Unknown error"),
+            "error"
+          );
+          setIsSubmitting(false);
           return;
         }
+      } else if (submission.reviewVideoUrl) {
+        reviewVideoUrl = submission.reviewVideoUrl;
+      } else {
+        setValidationErrors((prev) => ({
+          ...prev,
+          video: "Review video is required",
+        }));
+        showToast("Please record a review video", "error");
+        setIsSubmitting(false);
+        return;
+      }
 
-        await reviewProject(submission.id, reviewNotes, reviewVideoUrl);
+      // Submit the review with all required data
+      console.log("Submitting review:", {
+        submissionId: submission.id,
+        reviewNotes,
+        reviewVideoUrl,
+        rating,
+      });
 
-        setSubmission({
-          ...submission,
-          isReviewed: true,
-          reviewNotes,
-          reviewVideoUrl,
-        });
+      const response = await reviewProject(
+        submission.id,
+        reviewNotes,
+        reviewVideoUrl,
+        rating
+      );
 
-        setNewRecordingBlob(null);
-        localStorage.setItem("reviewSuccess", "true");
-        localStorage.setItem("reviewTimestamp", Date.now().toString());
+      if (response.success) {
         showToast("Review submitted successfully", "success");
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        navigate("/admin");
+        
+        // Update local state with type safety
+        if (submission) {
+          setSubmission({
+            ...submission,
+            isReviewed: true,
+            reviewNotes: reviewNotes,
+            reviewVideoUrl: reviewVideoUrl || undefined,
+            rating: rating
+          } as Submission);  // Add type assertion here
+        }
+
+        // Navigate after success
+        setTimeout(() => navigate("/admin"), 1500);
+      } else {
+        throw new Error(response.error || "Failed to submit review");
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to submit review";
-      setError(errorMessage);
-      showToast(errorMessage, "error");
-      setUploadStatus("error");
+      console.error("Review submission error:", error);
+      showToast(
+        error instanceof Error ? error.message : "Failed to submit review",
+        "error"
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const renderUploadStatus = () => {
-    switch (uploadStatus) {
-      case "uploading":
-        return (
-          <div className="mt-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">
-                Uploading video...
-              </span>
-              <span className="text-sm text-gray-500">{uploadProgress}%</span>
-            </div>
-            <ProgressBar progress={uploadProgress} />
-          </div>
-        );
-      case "processing":
-        return (
-          <div className="mt-4">
-            <div className="flex items-center justify-center space-x-2 text-blue-600">
-              <Upload className="w-5 h-5 animate-bounce" />
-              <span className="text-sm font-medium">Processing video...</span>
-            </div>
-          </div>
-        );
-      case "success":
-        return (
-          <div className="mt-4">
-            <div className="flex items-center justify-center space-x-2 text-green-600">
-              <CheckCircle className="w-5 h-5" />
-              <span className="text-sm font-medium">Upload complete!</span>
-            </div>
-          </div>
-        );
-      default:
-        return null;
-    }
+    if (uploadStatus === "idle") return null;
+
+    const statusConfig = {
+      uploading: {
+        text: "Uploading video...",
+        color: "text-blue-500",
+      },
+      processing: {
+        text: "Processing video...",
+        color: "text-yellow-500",
+      },
+      success: {
+        text: "Video uploaded successfully!",
+        color: "text-green-500",
+      },
+      error: {
+        text: "Failed to upload video",
+        color: "text-red-500",
+      },
+    };
+
+    const config = statusConfig[uploadStatus];
+
+    return (
+      <div className={`mt-2 flex items-center ${config.color}`}>
+        {uploadStatus === "uploading" || uploadStatus === "processing" ? (
+          <LoadingSpinner />
+        ) : uploadStatus === "success" ? (
+          <CheckCircle className="w-5 h-5 mr-2" />
+        ) : (
+          <X className="w-5 h-5 mr-2" />
+        )}
+        <span>{config.text}</span>
+        {uploadProgress > 0 && uploadProgress < 100 && (
+          <ProgressBar progress={uploadProgress} />
+        )}
+      </div>
+    );
   };
 
   if (isLoading) {
@@ -347,208 +409,233 @@ const ProjectReview: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-8">
-      <div className="bg-white rounded-lg shadow-md overflow-hidden max-w-7xl mx-auto">
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-          <div className="flex items-center">
+    <div className="min-h-screen bg-gray-100">
+      {/* Header Section */}
+      <header className="bg-white shadow-md py-4 px-8">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-4">
             <button
               onClick={() => navigate("/admin")}
-              className="mr-4 p-2 rounded-full hover:bg-gray-200 transition-colors"
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
             >
               <ArrowLeft className="w-6 h-6" />
             </button>
-            <h1 className="text-3xl font-bold">{submission?.project.name}</h1>
-          </div>
-          <div className="text-sm text-gray-500">
-            Submission ID: {submissionId}
-          </div>
-        </div>
-
-        <div className="md:flex">
-          <div className="md:w-1/2 p-6 bg-white">
-            <h2 className="text-2xl font-bold mb-4">Project Details</h2>
-            <p className="text-gray-600 mb-6">
-              {submission?.project.description}
-            </p>
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold mb-2">Submitted by</h3>
-              <p className="text-gray-700">{submission?.user.name}</p>
-              <p className="text-gray-500">{submission?.user.email}</p>
-            </div>
-            <div className="space-y-4">
-              {submission?.githubUrl && (
-                <a
-                  href={submission.githubUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center w-full px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-900 transition-colors"
-                >
-                  <Github className="w-5 h-5 mr-2" />
-                  View GitHub Repository
-                </a>
-              )}
-              {submission?.deployUrl && (
-                <a
-                  href={submission.deployUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-                >
-                  <Globe className="w-5 h-5 mr-2" />
-                  View Deployed Project
-                </a>
-              )}
-              {submission?.wsUrl && (
-                <a
-                  href={submission.wsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  <Zap className="w-5 h-5 mr-2" />
-                  View WebSocket URL
-                </a>
-              )}
-            </div>
-          </div>
-
-          <div className="md:w-1/2 p-6 bg-gray-50 border-t md:border-t-0 md:border-l border-gray-200">
-            <h2 className="text-2xl font-bold mb-6">Review Submission</h2>
-
-            <div className="mb-6 bg-white p-4 rounded-lg shadow-sm">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Quick Review Templates
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {predefinedTags.map((tag) => (
-                  <button
-                    key={tag}
-                    onClick={() => toggleTag(tag)}
-                    className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                      selectedTags.includes(tag)
-                        ? "bg-blue-600 text-white"
-                        : "bg-blue-100 text-blue-800 hover:bg-blue-200"
-                    }`}
-                  >
-                    {tag}
-                    {selectedTags.includes(tag) && (
-                      <X className="w-4 h-4 ml-1 inline-block" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mb-6 bg-white p-4 rounded-lg shadow-sm">
-              <label
-                htmlFor="reviewNotes"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Review Notes
-              </label>
-              <textarea
-                id="reviewNotes"
-                rows={6}
-                value={reviewNotes}
-                onChange={(e) => setReviewNotes(e.target.value)}
-                className={`w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  validationErrors.reviewNotes
-                    ? "border-red-500"
-                    : "border-gray-300"
-                }`}
-                placeholder="Enter your review notes here..."
-              />
-              {validationErrors.reviewNotes && (
-                <p className="mt-1 text-sm text-red-600">
-                  {validationErrors.reviewNotes}
-                </p>
-              )}
-            </div>
-
-            <div className="mb-6 bg-white p-4 rounded-lg shadow-sm">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Screen Recording
-              </label>
-              <ScreenRecorder onRecordingComplete={handleRecordingComplete} />
-              {renderUploadStatus()}
-            </div>
-
-            <button
-              onClick={handleReviewSubmit}
-              disabled={
-                isSubmitting ||
-                uploadStatus === "uploading" ||
-                uploadStatus === "processing"
-              }
-              className={`w-full flex items-center justify-center px-4 py-2 rounded-md text-white transition-colors ${
-                isSubmitting ||
-                uploadStatus === "uploading" ||
-                uploadStatus === "processing"
-                  ? "bg-blue-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
-              }`}
-            >
-              {isSubmitting ||
-              uploadStatus === "uploading" ||
-              uploadStatus === "processing" ? (
-                <>
-                  <Loading size="small" />
-                  {uploadStatus === "uploading"
-                    ? "Uploading..."
-                    : uploadStatus === "processing"
-                    ? "Processing..."
-                    : "Submitting..."}
-                </>
-              ) : (
-                <>
-                  <Send className="w-5 h-5 mr-2" />
-                  Upload Video and Submit Review
-                </>
-              )}
-            </button>
-
-            {validationErrors.reviewVideoUrl && (
-              <p className="mt-1 text-sm text-red-600">
-                {validationErrors.reviewVideoUrl}
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Project Review
+              </h1>
+              <p className="text-sm text-gray-500">
+                Submission ID: {submissionId}
               </p>
-            )}
-
-            {newRecordingBlob && (
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold mb-2">New Recording</h3>
-                <video
-                  src={URL.createObjectURL(newRecordingBlob)}
-                  controls
-                  className="w-full rounded-lg"
-                  preload="metadata"
-                >
-                  Your browser does not support the video tag.
-                </video>
-                <p className="mt-2 text-sm text-gray-600">
-                  Video size:{" "}
-                  {(newRecordingBlob.size / (1024 * 1024)).toFixed(2)} MB
-                </p>
-              </div>
-            )}
-
-            {submission?.reviewVideoUrl && !newRecordingBlob && (
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold mb-2">
-                  Previous Review Video
-                </h3>
-                <video
-                  src={submission.reviewVideoUrl}
-                  controls
-                  className="w-full rounded-lg"
-                >
-                  Your browser does not support the video tag.
-                </video>
-              </div>
-            )}
+            </div>
+          </div>
+          <div className="flex items-center">
+            <img
+              className="h-10 w-10 rounded-full"
+              src="https://appx-wsb-gcp.akamai.net.in/subject/2023-01-17-0.17044360120951185.jpg"
+              alt="100xReview Logo"
+            />
           </div>
         </div>
-      </div>
+      </header>
 
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Project Details Card */}
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="p-6">
+              <h2 className="text-xl font-semibold mb-4">Project Details</h2>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">
+                    Project Name
+                  </h3>
+                  <p className="mt-1 text-lg text-gray-900">
+                    {submission?.project.name}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">
+                    Description
+                  </h3>
+                  <p className="mt-1 text-gray-600">
+                    {submission?.project.description}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">
+                    Submitted By
+                  </h3>
+                  <div className="mt-1">
+                    <p className="text-gray-900">{submission?.user.name}</p>
+                    <p className="text-gray-500 text-sm">
+                      {submission?.user.email}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Project Links */}
+                <div className="pt-4 space-y-3">
+                  {submission?.githubUrl && (
+                    <a
+                      href={submission.githubUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center w-full px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-900 transition-colors"
+                    >
+                      <Github className="w-5 h-5 mr-2" />
+                      View GitHub Repository
+                    </a>
+                  )}
+                  {submission?.deployUrl && (
+                    <a
+                      href={submission.deployUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                    >
+                      <Globe className="w-5 h-5 mr-2" />
+                      View Deployed Project
+                    </a>
+                  )}
+                  {submission?.wsUrl && (
+                    <a
+                      href={submission.wsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                      <Zap className="w-5 h-5 mr-2" />
+                      View WebSocket URL
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Review Form Card */}
+          {submission?.isReviewed ? (
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="text-center">
+                <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Project Already Reviewed
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  This project has already been reviewed. You can view the
+                  review details above.
+                </p>
+                <button
+                  onClick={() => navigate("/admin")}
+                  className="px-6 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                >
+                  Back to Dashboard
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Quick Review Templates */}
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-semibold mb-4">
+                  Quick Review Templates
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {predefinedTags.map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => toggleTag(tag)}
+                      className={`px-4 py-2 rounded-md text-sm font-medium transition-all transform hover:scale-105 ${
+                        selectedTags.includes(tag)
+                          ? "bg-blue-600 text-white shadow-md"
+                          : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                      }`}
+                    >
+                      {tag}
+                      {selectedTags.includes(tag) && (
+                        <X className="w-4 h-4 ml-2 inline-block" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Rating Section */}
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-semibold mb-4">Project Rating</h3>
+                <StarRating
+                  rating={rating}
+                  onRatingChange={setRating}
+                  disabled={isSubmitting || uploadStatus === "processing"}
+                />
+                {validationErrors.rating && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {validationErrors.rating}
+                  </p>
+                )}
+              </div>
+
+              {/* Review Notes */}
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-semibold mb-4">Review Notes</h3>
+                <textarea
+                  value={reviewNotes}
+                  onChange={(e) => setReviewNotes(e.target.value)}
+                  className={`w-full px-4 py-3 text-gray-700 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    validationErrors.reviewNotes
+                      ? "border-red-500"
+                      : "border-gray-300"
+                  }`}
+                  rows={6}
+                  placeholder="Enter your detailed review notes here..."
+                />
+                {validationErrors.reviewNotes && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {validationErrors.reviewNotes}
+                  </p>
+                )}
+              </div>
+
+              {/* Screen Recording */}
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-semibold mb-4">Screen Recording</h3>
+                <ScreenRecorder onRecordingComplete={handleRecordingComplete} />
+                {renderUploadStatus()}
+                {newRecordingBlob && (
+                  <div className="mt-4">
+                    <video
+                      src={URL.createObjectURL(newRecordingBlob)}
+                      controls
+                      className="w-full rounded-lg"
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
+                )}
+                {validationErrors.video && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {validationErrors.video}
+                  </p>
+                )}
+              </div>
+
+              {/* Submit Button */}
+              <button
+                onClick={handleReviewSubmit}
+                disabled={isSubmitting}
+                className="w-full flex items-center justify-center px-6 py-3 rounded-lg text-white text-lg font-medium transition-all transform hover:scale-105 bg-blue-600 hover:bg-blue-700 shadow-lg"
+              >
+                <Send className="w-5 h-5 mr-2" />
+                Submit Review
+              </button>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Toast Notifications */}
       {toast && (
         <Toast
           message={toast.message}

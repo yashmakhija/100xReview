@@ -21,8 +21,14 @@ export const isLoadingState = atom<boolean>({
   default: true,
 });
 
-export const validationErrorsState = atom<{ [key: string]: string }>({
-  key: "validationErrorsState",
+export interface ValidationErrors {
+  reviewNotes?: string;
+  rating?: string;
+  video?: string;
+}
+
+export const validationErrorsState = atom<ValidationErrors>({
+  key: 'validationErrorsState',
   default: {},
 });
 

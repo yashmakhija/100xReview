@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 // Base API configuration
 export const API_BASE =
   import.meta.env.VITE_API_URL || "https://api.review.100xdevs.com";
@@ -48,6 +46,8 @@ export interface User {
 }
 
 export interface ProjectStatus {
+  userName: string;
+  rating: number | null | undefined;
   id: number;
   projectId: number;
   status: "PENDING_REVIEW" | "REVIEWED";
@@ -337,30 +337,53 @@ export async function createProject(projectData: {
 }
 
 export async function getSubmittedProjects() {
-  return fetchWithAuth(`${API_BASE}/api/projects/list`);
+  try {
+    const response = await fetchWithAuth(`${API_BASE}/api/projects/list`);
+    console.log("Submissions response:", response); // Debug log
+    return response;
+  } catch (error) {
+    console.error("Error fetching submissions:", error);
+    throw error;
+  }
 }
 
 export async function reviewProject(
   submissionId: number,
   reviewNotes: string,
-  reviewVideoUrl: string
+  reviewVideoUrl: string,
+  rating: number
 ) {
-  const schema = z.object({
-    submissionId: z.number(),
-    reviewNotes: z.string().min(1).max(1000),
-    reviewVideoUrl: z.string().url().optional(),
-  });
+  try {
+    const validatedData = {
+      submissionId,
+      reviewNotes,
+      reviewVideoUrl: reviewVideoUrl || null,
+      rating,
+    };
 
-  const validatedData = schema.parse({
-    submissionId,
-    reviewNotes,
-    reviewVideoUrl,
-  });
+    console.log("Sending review data:", validatedData);
 
-  return fetchWithAuth(`${API_BASE}/api/projects/review`, {
-    method: "POST",
-    body: JSON.stringify(validatedData),
-  });
+    const response = await fetch(`${API_BASE}/api/projects/review`, {
+      method: "POST",
+      headers: {
+        Authorization: localStorage.getItem("authorization") || "",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(validatedData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to submit review");
+    }
+
+    console.log("Review response:", data);
+    return data;
+  } catch (error) {
+    console.error("Error submitting review:", error);
+    throw error;
+  }
 }
 
 export async function uploadReviewVideo(submissionId: number, videoFile: File) {
@@ -368,9 +391,10 @@ export async function uploadReviewVideo(submissionId: number, videoFile: File) {
   formData.append("video", videoFile);
 
   const token = localStorage.getItem("authorization");
-  
+
   try {
-    const response = await fetch(
+    // First upload the video
+    const uploadResponse = await fetch(
       `${API_BASE}/api/projects/review/${submissionId}/video`,
       {
         method: "POST",
@@ -381,25 +405,55 @@ export async function uploadReviewVideo(submissionId: number, videoFile: File) {
       }
     );
 
-    const data = await response.json();
-    
-    // Handle both immediate and completion responses
-    if (response.status === 202) {
-      return {
-        message: data.message,
-        status: 'processing',
-        submissionId: data.submissionId
-      };
+    const uploadData = await uploadResponse.json();
+
+    if (!uploadResponse.ok) {
+      throw new Error(uploadData.error || "Failed to upload video");
     }
 
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to upload video');
+    // If upload is successful, get the updated submission details
+    const submissionResponse = await fetch(
+      `${API_BASE}/api/projects/submission/${submissionId}`,
+      {
+        headers: {
+          Authorization: token || "",
+        },
+      }
+    );
+
+    const submissionData = await submissionResponse.json();
+
+    if (!submissionResponse.ok) {
+      throw new Error(submissionData.error || "Failed to get submission details");
     }
 
-    return data;
+    return {
+      success: true,
+      submission: submissionData,
+      message: uploadData.message
+    };
+
   } catch (error) {
-    console.error('Error uploading video:', error);
-    throw new Error(error instanceof Error ? error.message : 'Failed to upload video');
+    console.error("Error uploading video:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to upload video"
+    );
+  }
+}
+
+// Add a new function to get submission details
+export async function getSubmissionDetails(submissionId: number) {
+  try {
+    const response = await fetchWithAuth(`${API_BASE}/api/projects/submission/${submissionId}`);
+    
+    if (!response) {
+      throw new Error("Failed to get submission details");
+    }
+
+    return response;
+  } catch (error) {
+    console.error("Error getting submission details:", error);
+    throw error;
   }
 }
 
@@ -421,14 +475,16 @@ export async function getDailySchedule(
   courseId: string
 ): Promise<ScheduleItem[]> {
   try {
-    const response = await fetchWithAuth(`${API_BASE}/api/schedule/daily/${courseId}`);
+    const response = await fetchWithAuth(
+      `${API_BASE}/api/schedule/daily/${courseId}`
+    );
     if (!Array.isArray(response)) {
-      console.warn('Unexpected response format:', response);
+      console.warn("Unexpected response format:", response);
       return [];
     }
     return response;
   } catch (error) {
-    console.error('Error in getDailySchedule:', error);
+    console.error("Error in getDailySchedule:", error);
     throw error;
   }
 }
@@ -634,23 +690,29 @@ export interface EditProjectData {
 }
 
 // Add this function
-export async function editProject(projectId: number, projectData: EditProjectData) {
+export async function editProject(
+  projectId: number,
+  projectData: EditProjectData
+) {
   try {
-    const response = await fetchWithAuth(`${API_BASE}/api/projects/edit-project/${projectId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        title: projectData.title,
-        description: projectData.description,
-        dueDate: projectData.dueDate,
-        notionUrl: projectData.notionUrl,
-      }),
-    });
+    const response = await fetchWithAuth(
+      `${API_BASE}/api/projects/edit-project/${projectId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: projectData.title,
+          description: projectData.description,
+          dueDate: projectData.dueDate,
+          notionUrl: projectData.notionUrl,
+        }),
+      }
+    );
 
     if (!response.id) {
-      throw new Error(response.error || 'Failed to update project');
+      throw new Error(response.error || "Failed to update project");
     }
 
     return response;

@@ -11,13 +11,26 @@ export interface Project {
 }
 
 export interface Submission {
-  wsUrl: string | undefined;
   id: number;
+  projectId: number;
+  userId: number;
   githubUrl: string;
   deployUrl: string;
+  wsUrl?: string;
+  submittedAt: string;
   isReviewed: boolean;
-  reviewNotes?: string;
-  reviewVideoUrl?: string;
-  user: User;
-  project: Project;
+  reviewNotes?: string | null;
+  reviewVideoUrl?: string | null;
+  rating?: number | null;
+  project: {
+    id: number;
+    name: string;
+    description: string;
+    dueDate: string;
+  };
+  user: {
+    id: number;
+    name: string;
+    email: string;
+  };
 }

@@ -24,6 +24,7 @@ import { ScheduleItemComponent } from "./ScheduleItemComponent";
 import { CourseSelector } from "./CourseSelector";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import ReviewModal from "./ReviewModal";
 
 const UserDashboard: React.FC = () => {
   const { darkMode, toggleDarkMode } = useDarkMode();
@@ -43,7 +44,7 @@ const UserDashboard: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
-  const [selectedVideoUrl, setSelectedVideoUrl] = useState("");
+  const [, setSelectedVideoUrl] = useState("");
   const [selectedReview, setSelectedReview] = useState<ProjectStatus | null>(
     null
   );
@@ -214,6 +215,8 @@ const UserDashboard: React.FC = () => {
         githubUrl,
         deployUrl,
         wsUrl,
+        userName: "",
+        rating: undefined
       };
 
       // Update both states immediately
@@ -690,75 +693,21 @@ const UserDashboard: React.FC = () => {
         </div>
       )}
 
-      {isVideoModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div
-            className={`w-full max-w-3xl rounded-lg ${
-              darkMode
-                ? "bg-gray-800 border-gray-700"
-                : "bg-white border-gray-200"
-            } border p-6`}
-          >
-            <div className="flex justify-between items-center mb-6">
-              <h2
-                className={`text-xl font-semibold ${
-                  darkMode ? "text-white" : "text-black"
-                }`}
-              >
-                {selectedReview ? "Project Review" : "Review Video"}
-              </h2>
-              <button
-                onClick={() => {
-                  setIsVideoModalOpen(false);
-                  setSelectedReview(null);
-                  setSelectedVideoUrl("");
-                }}
-                className={`p-2 rounded-full ${
-                  darkMode
-                    ? "hover:bg-gray-700 text-gray-400 hover:text-white"
-                    : "hover:bg-gray-100 text-gray-600 hover:text-black"
-                }`}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            {selectedVideoUrl && (
-              <div className="relative w-full" style={{ paddingTop: "56.25%" }}>
-                <iframe
-                  src={selectedVideoUrl}
-                  className="absolute inset-0 w-full h-full rounded-lg"
-                  loading="lazy"
-                  allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                  allowFullScreen
-                />
-              </div>
-            )}
-            {selectedReview && selectedReview.reviewNotes && (
-              <div className="mt-4">
-                <h3
-                  className={`text-lg font-semibold mb-2 ${
-                    darkMode ? "text-white" : "text-black"
-                  }`}
-                >
-                  Review Notes
-                </h3>
-                <div
-                  className={`p-4 rounded-lg ${
-                    darkMode ? "bg-gray-700" : "bg-gray-100"
-                  }`}
-                >
-                  <pre
-                    className={`whitespace-pre-wrap ${
-                      darkMode ? "text-white" : "text-black"
-                    }`}
-                  >
-                    {selectedReview.reviewNotes}
-                  </pre>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+      {isVideoModalOpen && selectedReview && (
+        <ReviewModal
+          review={{
+            reviewNotes: selectedReview.reviewNotes,
+            reviewVideoUrl: selectedReview.reviewVideoUrl,
+            projectName: selectedReview.projectName,
+            userName: selectedReview.userName,
+            rating: selectedReview.rating,
+          }}
+          onClose={() => {
+            setIsVideoModalOpen(false);
+            setSelectedReview(null);
+            setSelectedVideoUrl("");
+          }}
+        />
       )}
     </div>
   );

@@ -53,6 +53,10 @@ interface User {
 
 interface ProjectWithSubmissions extends Project {
   submissions?: {
+    courseName: string;
+    projectDueDate: string;
+    projectDescription: string;
+    rating: number | undefined;
     projectId: number;
     courseId: number;
     id: number;
@@ -72,9 +76,13 @@ interface ProjectWithSubmissions extends Project {
 }
 
 interface SubmissionData {
-  projectId: number;
-  courseId: number;
   id: number;
+  projectId: number;
+  projectName: string;
+  projectDescription: string;
+  projectDueDate: string;
+  courseId: number;
+  courseName: string;
   userId: number;
   userName: string;
   userEmail: string;
@@ -83,10 +91,9 @@ interface SubmissionData {
   wsUrl?: string;
   submittedAt: string;
   isReviewed: boolean;
-  reviewNotes?: string;
-  reviewVideoUrl?: string;
-  projectName: string;
-  submissionId?: number;
+  reviewNotes?: string | null;
+  reviewVideoUrl?: string | null;
+  rating?: number | null;
 }
 
 interface FilterState {
@@ -570,23 +577,29 @@ const AdminDashboard: React.FC = () => {
                       <button
                         onClick={() => {
                           if (submission.isReviewed) {
-                            setSelectedReview({
-                              ...submission,
+                            const reviewData: SubmissionData = {
+                              id: submission.id,
                               projectId: submission.projectId,
-                              projectName:
-                                submission.projectName || "Unknown Project",
+                              projectName: submission.projectName || "Unknown Project",
+                              projectDescription: submission.projectDescription,
+                              projectDueDate: submission.projectDueDate,
                               courseId: submission.courseId,
-                              submissionId: submission.id,
-                              reviewNotes: submission.reviewNotes,
-                              reviewVideoUrl: submission.reviewVideoUrl,
+                              courseName: submission.courseName,
+                              userId: submission.userId,
                               userName: submission.userName,
-                            });
+                              userEmail: submission.userEmail,
+                              githubUrl: submission.githubUrl,
+                              deployUrl: submission.deployUrl,
+                              wsUrl: submission.wsUrl,
+                              submittedAt: submission.submittedAt,
+                              isReviewed: submission.isReviewed,
+                              reviewNotes: submission.reviewNotes || null,
+                              reviewVideoUrl: submission.reviewVideoUrl || null,
+                              rating: submission.rating || null,
+                            };
+                            setSelectedReview(reviewData);
                           } else {
-                            navigate(
-                              `/project-review/${submission.courseId || 1}/${
-                                submission.id
-                              }`
-                            );
+                            navigate(`/project-review/${submission.courseId || 1}/${submission.id}`);
                           }
                         }}
                         className={`px-4 py-2 rounded-md transition-colors ${
@@ -595,9 +608,7 @@ const AdminDashboard: React.FC = () => {
                             : "text-red-500 bg-red-500/10 hover:bg-red-500/20"
                         }`}
                       >
-                        {submission.isReviewed
-                          ? "View Review"
-                          : "Review Project"}
+                        {submission.isReviewed ? "View Review" : "Review Project"}
                       </button>
                     </td>
                   </tr>
@@ -1715,12 +1726,16 @@ const AdminDashboard: React.FC = () => {
       {selectedReview && (
         <ReviewModal
           review={{
-            reviewNotes: selectedReview.reviewNotes,
-            reviewVideoUrl: selectedReview.reviewVideoUrl,
+            reviewNotes: selectedReview.reviewNotes || undefined,
+            reviewVideoUrl: selectedReview.reviewVideoUrl || undefined,
             projectName: selectedReview.projectName,
             userName: selectedReview.userName,
+            rating: selectedReview.rating || undefined,
           }}
-          onClose={() => setSelectedReview(null)}
+          onClose={() => {
+            console.log('Closing review modal with data:', selectedReview);
+            setSelectedReview(null);
+          }}
         />
       )}
       {showAddProject && (
