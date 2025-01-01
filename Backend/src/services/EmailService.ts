@@ -25,7 +25,16 @@ export async function sendProjectReviewEmail(userEmail: string, projectName: str
       
       <div style="background-color: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
         <h2 style="color: #2d3748; margin-top: 0;">Review Details:</h2>
-        <p style="color: #4a5568;">${reviewNotes}</p>
+        ${reviewNotes.includes('Project Rating:') ? `
+          <div style="margin-bottom: 15px;">
+            <p style="color: #4a5568;">${reviewNotes.split('Project Rating:')[0]}</p>
+            <div style="background-color: #edf2f7; padding: 12px; border-radius: 6px; text-align: center; margin-top: 10px;">
+              <p style="color: #2d3748; font-weight: 500; margin: 0;">Project Rating: ${reviewNotes.split('Project Rating:')[1].trim()}</p>
+            </div>
+          </div>
+        ` : `
+          <p style="color: #4a5568;">${reviewNotes}</p>
+        `}
         <div style="margin-top: 20px; text-align: center;">
           <p style="color: #4a5568; margin-bottom: 15px;">A video review is available on your dashboard.</p>
           <a href="${DASHBOARD_URL}" 

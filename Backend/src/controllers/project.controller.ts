@@ -206,17 +206,12 @@ export const uploadReviewVideo = async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    // Get submission details first
     const submission = await prisma.projectSubmission.findUnique({
       where: { id: submissionId },
       include: {
-        project: {
-          select: { name: true }
-        },
-        user: {
-          select: { email: true }
-        }
-      }
+        project: { select: { name: true } },
+        user: { select: { email: true } },
+      },
     });
 
     if (!submission) {
@@ -224,14 +219,6 @@ export const uploadReviewVideo = async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    // Send initial response to prevent timeout
-    res.status(202).json({
-      message: "Video upload started",
-      submissionId,
-      status: 'processing'
-    });
-
-    // Process video upload and email notification asynchronously
     try {
       const videoBuffer = req.file.buffer;
       const fileName = `review_${submissionId}_${Date.now()}.mp4`;
@@ -239,22 +226,19 @@ export const uploadReviewVideo = async (req: AuthRequest, res: Response) => {
 
       const updatedSubmission = await prisma.projectSubmission.update({
         where: { id: submissionId },
-        data: { reviewVideoUrl: videoUrl, isReviewed: true },
+        data: { 
+          reviewVideoUrl: videoUrl,
+        },
       });
 
-      // Send email notification
-      await sendProjectReviewEmail(
-        submission.user.email,
-        submission.project.name,
-        "Your project has been reviewed. Please check the video review.",
-        videoUrl
-      ).catch(error => {
-        console.error("Failed to send email notification:", error);
+      res.json({
+        success: true,
+        submission: updatedSubmission,
+        message: "Video uploaded successfully"
       });
-
-      console.log("Video upload and processing completed successfully");
     } catch (error) {
-      console.error("Error in async video processing:", error);
+      console.error("Error in video processing:", error);
+      res.status(500).json({ error: "Failed to process video" });
     }
   } catch (error) {
     console.error("Error in upload handler:", error);
@@ -270,12 +254,22 @@ export const uploadReviewVideo = async (req: AuthRequest, res: Response) => {
 export const reviewProject = async (req: AuthRequest, res: Response) => {
   const schema = z.object({
     submissionId: z.number(),
-    reviewNotes: z.string().min(1).max(1000),
-    reviewVideoUrl: z.string().url().optional(),
+    reviewNotes: z.string().min(1),
+    reviewVideoUrl: z.string().url().nullable(),
+    rating: z.number().min(1).max(5),
   });
 
   try {
-    const { submissionId, reviewNotes, reviewVideoUrl } = schema.parse(req.body);
+    const { submissionId, reviewNotes, reviewVideoUrl, rating } = schema.parse(
+      req.body
+    );
+    console.log("Received review data:", {
+      submissionId,
+      reviewNotes,
+      reviewVideoUrl,
+      rating,
+    });
+
     const user = req.user as { id: number; role: string };
 
     if (user.role !== "ADMIN") {
@@ -283,17 +277,12 @@ export const reviewProject = async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    // Get the submission with project and user details
     const submission = await prisma.projectSubmission.findUnique({
       where: { id: submissionId },
       include: {
-        project: {
-          select: { name: true }
-        },
-        user: {
-          select: { email: true }
-        }
-      }
+        project: { select: { name: true } },
+        user: { select: { email: true, name: true } },
+      },
     });
 
     if (!submission) {
@@ -307,28 +296,46 @@ export const reviewProject = async (req: AuthRequest, res: Response) => {
         isReviewed: true,
         reviewNotes,
         reviewVideoUrl,
+        rating,
       },
     });
 
-    // Send email notification
-    await sendProjectReviewEmail(
-      submission.user.email,
-      submission.project.name,
-      reviewNotes,
-      reviewVideoUrl
-    );
+    console.log("Updated submission:", updatedSubmission);
 
-    res.json({
+    // Send email notification
+    try {
+      await sendProjectReviewEmail(
+        submission.user.email,
+        submission.project.name,
+        `${reviewNotes}\n\nProject Rating: ${rating}/5`
+      );
+    } catch (emailError) {
+      console.error("Email notification failed:", emailError);
+      // Continue even if email fails
+    }
+
+    res.status(200).json({
+      success: true,
       message: "Project reviewed successfully",
       submission: updatedSubmission,
     });
+    return;
   } catch (error) {
     console.error("Error reviewing project:", error);
+
     if (error instanceof z.ZodError) {
-      res.status(400).json({ error: "Invalid input", details: error.errors });
+      res.status(400).json({
+        error: "Invalid input",
+        details: error.errors,
+      });
       return;
     }
-    res.status(500).json({ error: "Failed to review project" });
+
+    res.status(500).json({
+      error:
+        error instanceof Error ? error.message : "Failed to review project",
+    });
+    return;
   }
 };
 
@@ -348,6 +355,7 @@ export const getUserProjectStatuses = async (
         isReviewed: true,
         reviewNotes: true,
         reviewVideoUrl: true,
+        rating: true,
         submittedAt: true,
         project: {
           select: {
@@ -369,6 +377,7 @@ export const getUserProjectStatuses = async (
       status: submission.isReviewed ? "REVIEWED" : "PENDING_REVIEW",
       reviewNotes: submission.reviewNotes,
       reviewVideoUrl: submission.reviewVideoUrl,
+      rating: submission.rating,
     }));
 
     res.json(projectStatuses);
@@ -440,6 +449,7 @@ export const getAllProjectSubmissions = async (
       isReviewed: submission.isReviewed,
       reviewNotes: submission.reviewNotes,
       reviewVideoUrl: submission.reviewVideoUrl,
+      rating: submission.rating,
     }));
 
     res.json(formattedSubmissions);
@@ -565,5 +575,40 @@ export const editProject = async (req: Request, res: Response) => {
   } catch (err) {
     console.error("Error updating project:", err);
     res.status(500).json({ error: "Failed to update project" });
+  }
+};
+
+// Get Submission Details
+export const getSubmissionDetails = async (req: AuthRequest, res: Response) => {
+  const { submissionId } = req.params;
+  const user = req.user as { id: number; role: string };
+
+  try {
+    if (user.role !== "ADMIN") {
+      res.status(403).json({ error: "Access denied. Admins only." });
+      return;
+    }
+
+    const submission = await prisma.projectSubmission.findUnique({
+      where: { id: Number(submissionId) },
+      include: {
+        project: {
+          select: { name: true },
+        },
+        user: {
+          select: { email: true, name: true },
+        },
+      },
+    });
+
+    if (!submission) {
+      res.status(404).json({ error: "Submission not found" });
+      return;
+    }
+
+    res.json(submission);
+  } catch (error) {
+    console.error("Error fetching submission:", error);
+    res.status(500).json({ error: "Failed to fetch submission" });
   }
 };

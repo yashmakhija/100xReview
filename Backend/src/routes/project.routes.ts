@@ -62,4 +62,6 @@ router.put(
   ProjectController.editProject
 );
 
+router.get("/submission/:submissionId", requireAuth, ProjectController.getSubmissionDetails);
+
 export default router;

@@ -114,6 +114,7 @@ model ProjectSubmission {
   isReviewed    Boolean  @default(false)
   reviewNotes   String?  // Admin's review notes
   reviewVideoUrl String? // Optional link to recorded video review
+  rating        Int?
   userId        Int
   projectId     Int
   user          User     @relation(fields: [userId], references: [id])
