@@ -6,7 +6,7 @@ interface ScreenRecorderProps {
   maxRecordingDuration?: number;
 }
 
-const ScreenRecorder: React.FC<ScreenRecorderProps> = ({
+const   ScreenRecorder: React.FC<ScreenRecorderProps> = ({
   onRecordingComplete,
   maxRecordingDuration = 15 * 60 * 1000, // 15 minutes default
 }) => {
@@ -16,6 +16,8 @@ const ScreenRecorder: React.FC<ScreenRecorderProps> = ({
   const [isRecording, setIsRecording] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedAudioDevice, setSelectedAudioDevice] = useState<string>("");
 
   // Refs for media elements
   const webcamVideoRef = useRef<HTMLVideoElement>(null);
@@ -200,32 +202,36 @@ const ScreenRecorder: React.FC<ScreenRecorderProps> = ({
   const toggleAudio = useCallback(async () => {
     try {
       if (audioStreamRef.current) {
-        // If we already have an audio stream, toggle its tracks
-        audioStreamRef.current.getAudioTracks().forEach((track) => {
-          track.enabled = !isAudioEnabled;
-        });
-      } else if (!isAudioEnabled) {
-        // If we're unmuting and don't have an audio stream, request one
+        // Stop existing tracks
+        audioStreamRef.current.getTracks().forEach(track => track.stop());
+        audioStreamRef.current = null;
+      }
+
+      if (!isAudioEnabled) {
         const stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
+          audio: {
+            deviceId: selectedAudioDevice ? { exact: selectedAudioDevice } : undefined,
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          }
         });
         audioStreamRef.current = stream;
-        stream.getAudioTracks().forEach((track) => {
+        stream.getAudioTracks().forEach(track => {
           track.enabled = true;
         });
       }
+      
       setIsAudioEnabled(!isAudioEnabled);
     } catch (error) {
       console.error("Error toggling audio:", error);
       if (error instanceof DOMException && error.name === "NotAllowedError") {
         alert("Please allow microphone access to use audio.");
       } else {
-        alert(
-          "Failed to toggle audio. Please check your microphone connection."
-        );
+        alert("Failed to toggle audio. Please check your microphone connection.");
       }
     }
-  }, [isAudioEnabled]);
+  }, [isAudioEnabled, selectedAudioDevice]);
 
   // Update captureAudio function
   const captureAudio = async () => {
@@ -233,16 +239,21 @@ const ScreenRecorder: React.FC<ScreenRecorderProps> = ({
 
     try {
       if (audioStreamRef.current) {
-        // Return existing stream if we have one
-        return audioStreamRef.current;
+        // Stop existing tracks
+        audioStreamRef.current.getTracks().forEach(track => track.stop());
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
+        audio: {
+          deviceId: selectedAudioDevice ? { exact: selectedAudioDevice } : undefined,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        }
       });
+      
       audioStreamRef.current = stream;
-      // Ensure the audio track's enabled state matches our isAudioEnabled state
-      stream.getAudioTracks().forEach((track) => {
+      stream.getAudioTracks().forEach(track => {
         track.enabled = isAudioEnabled;
       });
       return stream;
@@ -465,6 +476,43 @@ const ScreenRecorder: React.FC<ScreenRecorderProps> = ({
     }
   }, [isWebcamActive, isScreenSharing, drawFrame]);
 
+  // Add this function to get available audio devices
+  const getAudioDevices = async () => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const audioInputs = devices.filter(device => device.kind === 'audioinput');
+      setAudioDevices(audioInputs);
+      
+      // Set default device if available
+      if (audioInputs.length > 0 && !selectedAudioDevice) {
+        setSelectedAudioDevice(audioInputs[0].deviceId);
+      }
+    } catch (error) {
+      console.error('Error getting audio devices:', error);
+    }
+  };
+
+  // Add useEffect to get devices and listen for device changes
+  useEffect(() => {
+    getAudioDevices();
+
+    // Listen for device changes
+    navigator.mediaDevices.addEventListener('devicechange', getAudioDevices);
+
+    return () => {
+      navigator.mediaDevices.removeEventListener('devicechange', getAudioDevices);
+    };
+  }, []);
+
+  const handleAudioDeviceChange = async (deviceId: string) => {
+    setSelectedAudioDevice(deviceId);
+    if (isAudioEnabled) {
+      // Restart audio with new device
+      await toggleAudio();
+      await toggleAudio();
+    }
+  };
+
   return (
     <div className="rounded-lg p-4 max-w-md mx-auto bg-white shadow-md">
       <div className="relative bg-gray-100 rounded-lg mb-4 overflow-hidden aspect-video">
@@ -499,6 +547,27 @@ const ScreenRecorder: React.FC<ScreenRecorderProps> = ({
           </div>
         )}
       </div>
+
+      {/* Audio Device Selector */}
+      {audioDevices.length > 0 && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Select Microphone
+          </label>
+          <select
+            value={selectedAudioDevice}
+            onChange={(e) => handleAudioDeviceChange(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            disabled={isRecording}
+          >
+            {audioDevices.map((device) => (
+              <option key={device.deviceId} value={device.deviceId}>
+                {device.label || `Microphone ${device.deviceId.slice(0, 5)}...`}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Control Panel */}
       <div className="flex justify-between items-center bg-gray-100 rounded-lg p-2">
