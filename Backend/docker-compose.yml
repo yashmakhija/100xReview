@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 services:
   backend:
     build: ./
@@ -9,8 +9,12 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - PORT=8012
       - NODE_ENV=production
-      - BUNNY_CDN_STORAGE_ZONE=${BUNNY_CDN_STORAGE_ZONE}
-      - BUNNY_CDN_API_KEY=${BUNNY_CDN_API_KEY}
+      - CDN_BASE_UPLOAD_URL
+      - CDN_BASE_ACCESS_URL
+      - CDN_API_KEY
+      - POSTMARK_USERNAME
+      - BUNNY_LIBRARY_ID
+      - BUNNY_STREAM_API_KEY
       - EMAIL_USER=${EMAIL_USER}
       - EMAIL_PASSWORD=${EMAIL_PASSWORD}
     restart: always

@@ -24,7 +24,6 @@ RUN npx prisma generate
 
 RUN npm run build
 
-
 EXPOSE 8012
 
 
