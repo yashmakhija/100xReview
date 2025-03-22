@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 100xdashboard
+  labels:
+    app: 100xreview
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: 100xreview
+  template:
+    metadata:
+      labels:
+        app: 100xreview
+    spec:
+      containers:
+        - name: 100xreview
+          image: yashmakhija/100xreview
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8012

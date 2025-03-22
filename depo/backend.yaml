@@ -1,0 +1,101 @@
+# service
+#deployment
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: review-backend
+  labels:
+    app: review-backend
+spec:
+  selector:
+    app: review-backend
+  ports:
+    - protocol: TCP
+      port: 8012
+      targetPort: 8012
+
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: review-backend
+  labels:
+    app: review-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: review-backend
+  template:
+    metadata:
+      labels:
+        app: review-backend
+    spec:
+      containers:
+        - name: backend
+          image: yashmakhija/100xreview
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8012
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: review-secret
+                  key: DATABASE_URL
+
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: review-secret
+                  key: JWT_SECRET
+
+            - name: CDN_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: review-secret
+                  key: CDN_API_KEY
+
+            - name: CDN_BASE_UPLOAD_URL
+              valueFrom:
+                secretKeyRef:
+                  name: review-secret
+                  key: CDN_BASE_UPLOAD_URL
+
+            - name: CDN_BASE_ACCESS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: review-secret
+                  key: CDN_BASE_ACCESS_URL
+
+            - name: POSTMARK_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: review-secret
+                  key: POSTMARK_USERNAME
+
+            - name: EMAIL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: review-secret
+                  key: EMAIL_USER
+
+            - name: EMAIL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: review-secret
+                  key: EMAIL_PASSWORD
+
+            - name: BUNNY_STREAM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: review-secret
+                  key: BUNNY_STREAM_API_KEY
+
+            - name: BUNNY_LIBRARY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: review-secret
+                  key: BUNNY_LIBRARY_ID
