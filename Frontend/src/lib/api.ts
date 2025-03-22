@@ -120,9 +120,17 @@ async function handleAPIResponse(response: Response) {
 // Helper function for authenticated requests
 export async function fetchWithAuth(url: string, options: RequestInit = {}) {
   const token = localStorage.getItem("authorization");
+
+  // Ensure token has Bearer prefix
+  const authToken = token
+    ? token.startsWith("Bearer ")
+      ? token
+      : `Bearer ${token}`
+    : "";
+
   const headers = {
     "Content-Type": "application/json",
-    Authorization: token || "",
+    Authorization: authToken,
     ...options.headers,
   };
 
@@ -363,10 +371,18 @@ export async function reviewProject(
 
     console.log("Sending review data:", validatedData);
 
+    // Get token and ensure it has Bearer prefix
+    const token = localStorage.getItem("authorization");
+    const authToken = token
+      ? token.startsWith("Bearer ")
+        ? token
+        : `Bearer ${token}`
+      : "";
+
     const response = await fetch(`${API_BASE}/api/projects/review`, {
       method: "POST",
       headers: {
-        Authorization: localStorage.getItem("authorization") || "",
+        Authorization: authToken,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(validatedData),
@@ -391,6 +407,12 @@ export async function uploadReviewVideo(submissionId: number, videoFile: File) {
   formData.append("video", videoFile);
 
   const token = localStorage.getItem("authorization");
+  // Ensure token has Bearer prefix
+  const authToken = token
+    ? token.startsWith("Bearer ")
+      ? token
+      : `Bearer ${token}`
+    : "";
 
   try {
     // First upload the video
@@ -399,7 +421,7 @@ export async function uploadReviewVideo(submissionId: number, videoFile: File) {
       {
         method: "POST",
         headers: {
-          Authorization: token || "",
+          Authorization: authToken,
         },
         body: formData,
       }
@@ -416,7 +438,7 @@ export async function uploadReviewVideo(submissionId: number, videoFile: File) {
       `${API_BASE}/api/projects/submission/${submissionId}`,
       {
         headers: {
-          Authorization: token || "",
+          Authorization: authToken,
         },
       }
     );
@@ -424,15 +446,16 @@ export async function uploadReviewVideo(submissionId: number, videoFile: File) {
     const submissionData = await submissionResponse.json();
 
     if (!submissionResponse.ok) {
-      throw new Error(submissionData.error || "Failed to get submission details");
+      throw new Error(
+        submissionData.error || "Failed to get submission details"
+      );
     }
 
     return {
       success: true,
       submission: submissionData,
-      message: uploadData.message
+      message: uploadData.message,
     };
-
   } catch (error) {
     console.error("Error uploading video:", error);
     throw new Error(
@@ -444,8 +467,10 @@ export async function uploadReviewVideo(submissionId: number, videoFile: File) {
 // Add a new function to get submission details
 export async function getSubmissionDetails(submissionId: number) {
   try {
-    const response = await fetchWithAuth(`${API_BASE}/api/projects/submission/${submissionId}`);
-    
+    const response = await fetchWithAuth(
+      `${API_BASE}/api/projects/submission/${submissionId}`
+    );
+
     if (!response) {
       throw new Error("Failed to get submission details");
     }

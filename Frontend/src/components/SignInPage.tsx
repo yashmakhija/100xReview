@@ -46,10 +46,13 @@ const SignInPage: React.FC = () => {
           email: formData.email.toLowerCase(),
         });
 
-        const token = `Bearer ${response.token}`;
-        localStorage.setItem("authorization", token);
+        // Store token directly without adding Bearer prefix
+        localStorage.setItem("authorization", response.token);
+
         toast.success("Successfully signed in!");
-        navigate("/onboarding");
+
+        // Redirect to dashboard instead of onboarding
+        navigate("/dashboard");
       } catch (error: unknown) {
         console.error("Sign in error:", error);
 
