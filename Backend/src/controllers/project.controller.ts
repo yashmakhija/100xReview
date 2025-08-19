@@ -3,7 +3,7 @@ import { AuthRequest } from "../types/auth-request";
 import prisma from "../config/prisma";
 import { uploadToBunnyCDN } from "../Utils/bunnycdn";
 import { z } from "zod";
-import { sendProjectReviewEmail } from "../services/EmailService";
+import { EmailService } from "../services/EmailService";
 
 // Get Projects by Course (Enrolled Students Only)
 export const getProjectsByCourse = async (req: AuthRequest, res: Response) => {
@@ -226,7 +226,7 @@ export const uploadReviewVideo = async (req: AuthRequest, res: Response) => {
 
       const updatedSubmission = await prisma.projectSubmission.update({
         where: { id: submissionId },
-        data: { 
+        data: {
           reviewVideoUrl: videoUrl,
         },
       });
@@ -234,7 +234,7 @@ export const uploadReviewVideo = async (req: AuthRequest, res: Response) => {
       res.json({
         success: true,
         submission: updatedSubmission,
-        message: "Video uploaded successfully"
+        message: "Video uploaded successfully",
       });
     } catch (error) {
       console.error("Error in video processing:", error);
@@ -302,16 +302,14 @@ export const reviewProject = async (req: AuthRequest, res: Response) => {
 
     console.log("Updated submission:", updatedSubmission);
 
-    // Send email notification
     try {
-      await sendProjectReviewEmail(
+      await EmailService.sendProjectReviewEmail(
         submission.user.email,
         submission.project.name,
         `${reviewNotes}\n\nProject Rating: ${rating}/5`
       );
     } catch (emailError) {
-      console.error("Email notification failed:", emailError);
-      // Continue even if email fails
+      console.error("Email notification failed:", emailError);  
     }
 
     res.status(200).json({

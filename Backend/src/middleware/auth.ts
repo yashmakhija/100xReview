@@ -1,31 +1,49 @@
 import { Request, Response, NextFunction } from "express";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import { TokenService } from "../services/TokenService";
+import { AppError, ErrorType, createError } from "../errors";
 
 interface AuthRequest extends Request {
-  user?: JwtPayload | string;
+  user?: Record<string, any>;
 }
-
-const secretKey = process.env.JWT_SECRET || "100xAttend"; // Replace with a secure secret key
 
 export const requireAuth = (
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ): void => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    res.status(401).json({ error: "Unauthorized access" });
-    return;
-  }
-
-  const token = authHeader.split(" ")[1];
-
   try {
-    const decoded = jwt.verify(token, secretKey);
-    req.user = decoded;
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      throw createError(
+        ErrorType.UNAUTHORIZED,
+        "Authorization token is required"
+      );
+    }
+
+    const token = authHeader.split(" ")[1];
+    const payload = TokenService.verifyAccessToken(token);
+
+    if (!payload) {
+      throw createError(ErrorType.INVALID_TOKEN, "Invalid or expired token");
+    }
+
+    req.user = payload;
     next();
   } catch (error) {
-    res.status(401).json({ error: "Invalid or expired token" });
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({
+        status: "error",
+        message: error.message,
+        code: error.name,
+      });
+      return;
+    }
+
+    res.status(401).json({
+      status: "error",
+      message: "Authentication failed",
+      code: ErrorType.UNAUTHORIZED,
+    });
   }
 };
