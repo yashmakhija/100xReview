@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Footer from "./Footer";
+import { useAuthStore } from "../store/authStore";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,25 +12,35 @@ const Layout: React.FC<LayoutProps> = ({ children, hideFooter = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const { isAuthenticated, user } = useAuthStore();
+
   useEffect(() => {
-    const token = localStorage.getItem("authorization");
-    const isAuthPage = ["/signin", "/signup", "/password-reset"].includes(
+    const isAuthPage = ["/signin", "/password-reset"].includes(
       location.pathname
     );
 
-    if (token && isAuthPage) {
-      navigate("/dashboard", { replace: true });
+    if (isAuthenticated && isAuthPage) {
+      // Redirect to appropriate dashboard based on role
+      if (user?.role === "ADMIN") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     }
-  }, [location.pathname, navigate]);
+  }, [location.pathname, navigate, isAuthenticated, user]);
 
   const handleProtectedLink = (path: string) => {
-    const token = localStorage.getItem("authorization");
-    const isAuthPage = ["/signin", "/signup", "/password-reset"].includes(path);
+    const isAuthPage = ["/signin", "/password-reset"].includes(path);
 
-    if (!token && !isAuthPage) {
+    if (!isAuthenticated && !isAuthPage) {
       navigate("/signin", { state: { from: path } });
-    } else if (token && isAuthPage) {
-      navigate("/dashboard");
+    } else if (isAuthenticated && isAuthPage) {
+      // Redirect based on role
+      if (user?.role === "ADMIN") {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
     } else {
       navigate(path);
     }

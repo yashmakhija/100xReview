@@ -4,10 +4,16 @@ import { Mail, Lock, Loader2 } from "lucide-react";
 import { signIn } from "../lib/api";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
+import { useAuthStore } from "../store/authStore";
 
 const SignInPage: React.FC = () => {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
+  const {
+    login,
+    setError: setAuthError,
+    isLoading,
+    setLoading,
+  } = useAuthStore();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -39,20 +45,28 @@ const SignInPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      setIsLoading(true);
+      setLoading(true);
       try {
         const response = await signIn({
           ...formData,
           email: formData.email.toLowerCase(),
         });
 
-        // Store token directly without adding Bearer prefix
-        localStorage.setItem("authorization", response.token);
+        login(response.accessToken, {
+          id: response.user.id,
+          name: response.user.name,
+          email: response.user.email,
+          role: response.user.role,
+        });
 
         toast.success("Successfully signed in!");
 
-        // Redirect to dashboard instead of onboarding
-        navigate("/dashboard");
+        // Navigate based on role
+        if (response.user.role === "ADMIN") {
+          navigate("/admin");
+        } else {
+          navigate("/dashboard");
+        }
       } catch (error: unknown) {
         console.error("Sign in error:", error);
 
@@ -74,18 +88,16 @@ const SignInPage: React.FC = () => {
           }
         }
 
+        setAuthError(errorMessage);
         toast.error(errorMessage);
 
-        // Set form-level error with more specific message
+        // Set form-level error
         setErrors((prev) => ({
           ...prev,
-          form:
-            error instanceof Error && error.message.includes("404")
-              ? "No account found. Please sign up first"
-              : "Please check your credentials and try again",
+          form: "Invalid credentials. Please check your email and password.",
         }));
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     }
   };

@@ -1,7 +1,8 @@
 import { Navigate, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { fetchWithAuth } from "../lib/api";
 import toast from "react-hot-toast";
+import { useAuthStore } from "../store/authStore";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -16,43 +17,45 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredRole,
 }) => {
   const location = useLocation();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const {
+    isAuthenticated,
+    token,
+    user,
+    setUser,
+    logout,
+    isLoading,
+    setLoading,
+  } = useAuthStore();
 
   useEffect(() => {
     const validateToken = async () => {
+      if (!token) return;
+
       try {
+        setLoading(true);
         console.log("Validating token...");
         const response = await fetchWithAuth(`${API_URL}/api/auth/validate`);
         console.log("Token validation response:", response);
 
-        const { user } = response;
-        setUserRole(user.role);
-        setIsAuthenticated(true);
-        console.log("Authentication successful. User role:", user.role);
+        setUser(response.user);
+        console.log(
+          "Authentication successful. User role:",
+          response.user.role
+        );
       } catch (error) {
         console.error("Token validation error:", error);
         // Clear invalid token
-        localStorage.removeItem("authorization");
-        setIsAuthenticated(false);
+        logout();
         toast.error("Your session has expired. Please sign in again.");
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
-    const token = localStorage.getItem("authorization");
-    if (!token) {
-      console.log("No token found in localStorage");
-      setIsLoading(false);
-      setIsAuthenticated(false);
-      return;
+    if (token && (!user || !user.role)) {
+      validateToken();
     }
-
-    console.log("Token found, validating...");
-    validateToken();
-  }, []);
+  }, [token, user, setUser, logout, setLoading]);
 
   if (isLoading) {
     return (
@@ -62,19 +65,23 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !token) {
     console.log("Not authenticated, redirecting to signin");
     return (
       <Navigate to="/signin" state={{ from: location.pathname }} replace />
     );
   }
 
-  if (requiredRole === "ADMIN" && userRole !== "ADMIN") {
+  if (requiredRole === "ADMIN" && user?.role !== "ADMIN") {
     console.log("User is not an admin, redirecting to dashboard");
     return <Navigate to="/dashboard" replace />;
   }
 
-  if (requiredRole === "USER" && userRole !== "ADMIN" && userRole !== "USER") {
+  if (
+    requiredRole === "USER" &&
+    user?.role !== "ADMIN" &&
+    user?.role !== "USER"
+  ) {
     console.log("User has invalid role, redirecting to signin");
     return <Navigate to="/signin" replace />;
   }
