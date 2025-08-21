@@ -160,7 +160,7 @@ const PasswordResetPage: React.FC = () => {
               errors.email
                 ? "border-red-300 focus:ring-red-500 focus:border-red-500"
                 : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
-            } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors`}
+            } rounded-md shadow-xs placeholder-gray-400 focus:outline-hidden focus:ring-2 transition-colors`}
             placeholder="you@example.com"
             value={formData.email}
             onChange={handleChange}
@@ -181,7 +181,7 @@ const PasswordResetPage: React.FC = () => {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-xs text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
             <Loader2 className="w-5 h-5 animate-spin" />
@@ -213,7 +213,7 @@ const PasswordResetPage: React.FC = () => {
               errors.otp
                 ? "border-red-300 focus:ring-red-500 focus:border-red-500"
                 : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
-            } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors`}
+            } rounded-md shadow-xs placeholder-gray-400 focus:outline-hidden focus:ring-2 transition-colors`}
             placeholder="Enter 6-digit code"
             value={formData.otp}
             onChange={handleChange}
@@ -234,7 +234,7 @@ const PasswordResetPage: React.FC = () => {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-xs text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
             <Loader2 className="w-5 h-5 animate-spin" />
@@ -268,7 +268,7 @@ const PasswordResetPage: React.FC = () => {
               errors.newPassword
                 ? "border-red-300 focus:ring-red-500 focus:border-red-500"
                 : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
-            } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors`}
+            } rounded-md shadow-xs placeholder-gray-400 focus:outline-hidden focus:ring-2 transition-colors`}
             placeholder="••••••••"
             value={formData.newPassword}
             onChange={handleChange}
@@ -305,7 +305,7 @@ const PasswordResetPage: React.FC = () => {
               errors.confirmPassword
                 ? "border-red-300 focus:ring-red-500 focus:border-red-500"
                 : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
-            } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors`}
+            } rounded-md shadow-xs placeholder-gray-400 focus:outline-hidden focus:ring-2 transition-colors`}
             placeholder="••••••••"
             value={formData.confirmPassword}
             onChange={handleChange}
@@ -326,7 +326,7 @@ const PasswordResetPage: React.FC = () => {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-xs text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
             <Loader2 className="w-5 h-5 animate-spin" />
@@ -339,7 +339,7 @@ const PasswordResetPage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-blue-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-linear-to-br from-indigo-100 via-purple-50 to-blue-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -357,7 +357,7 @@ const PasswordResetPage: React.FC = () => {
                 className="size-10 rounded-full"
                 src="https://appx-wsb-gcp.akamai.net.in/subject/2023-01-17-0.17044360120951185.jpg"
               />
-              <div className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-blue-700 inline-block text-transparent bg-clip-text">
+              <div className="text-3xl font-bold bg-linear-to-r from-blue-400 to-blue-700 inline-block text-transparent bg-clip-text">
                 100xReview
               </div>
             </a>

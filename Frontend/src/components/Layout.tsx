@@ -48,7 +48,7 @@ const Layout: React.FC<LayoutProps> = ({ children, hideFooter = false }) => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <main className="flex-grow">{children}</main>
+      <main className="grow">{children}</main>
       {!hideFooter && <Footer onProtectedLinkClick={handleProtectedLink} />}
     </div>
   );

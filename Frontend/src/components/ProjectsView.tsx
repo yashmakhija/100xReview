@@ -62,7 +62,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           {project.submissions?.map((submission) => (
             <div
               key={submission.id}
-              className="bg-white dark:bg-gray-600 rounded-lg p-4 shadow-sm"
+              className="bg-white dark:bg-gray-600 rounded-lg p-4 shadow-xs"
             >
               <p
                 className={`text-sm ${

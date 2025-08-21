@@ -141,7 +141,7 @@ export const ProjectSection: React.FC<ProjectSectionProps> = ({
                     darkMode
                       ? "bg-gray-700 text-white"
                       : "bg-white text-gray-900"
-                  } border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500`}
+                  } border-gray-300 shadow-xs focus:border-blue-500 focus:ring-blue-500`}
                   required
                 />
               </div>
@@ -167,7 +167,7 @@ export const ProjectSection: React.FC<ProjectSectionProps> = ({
                     darkMode
                       ? "bg-gray-700 text-white"
                       : "bg-white text-gray-900"
-                  } border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500`}
+                  } border-gray-300 shadow-xs focus:border-blue-500 focus:ring-blue-500`}
                   rows={3}
                   required
                 ></textarea>
@@ -192,7 +192,7 @@ export const ProjectSection: React.FC<ProjectSectionProps> = ({
                     darkMode
                       ? "bg-gray-700 text-white"
                       : "bg-white text-gray-900"
-                  } border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500`}
+                  } border-gray-300 shadow-xs focus:border-blue-500 focus:ring-blue-500`}
                   required
                 />
               </div>
@@ -218,7 +218,7 @@ export const ProjectSection: React.FC<ProjectSectionProps> = ({
                     darkMode
                       ? "bg-gray-700 text-white"
                       : "bg-white text-gray-900"
-                  } border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500`}
+                  } border-gray-300 shadow-xs focus:border-blue-500 focus:ring-blue-500`}
                   required
                 >
                   {courses.map((course) => (

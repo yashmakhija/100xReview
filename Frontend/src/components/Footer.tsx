@@ -20,7 +20,7 @@ const Footer: React.FC<FooterProps> = ({ onProtectedLinkClick }) => {
                 src="https://appx-wsb-gcp.akamai.net.in/subject/2023-01-17-0.17044360120951185.jpg"
                 alt="100xDevs"
               />
-              <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-200 inline-block text-transparent bg-clip-text">
+              <div className="text-2xl font-bold bg-linear-to-r from-blue-400 to-blue-200 inline-block text-transparent bg-clip-text">
                 100xReview
               </div>
             </div>

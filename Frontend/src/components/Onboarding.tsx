@@ -37,14 +37,14 @@ const CourseCard: React.FC<{
         alt={course.name}
         className="w-full h-full object-cover"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+      <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
       <h3 className="absolute bottom-4 left-4 text-xl font-bold text-white">
         {course.name}
       </h3>
     </div>
 
-    <div className="p-6 flex-grow flex flex-col">
-      <div className="flex-grow">
+    <div className="p-6 grow flex flex-col">
+      <div className="grow">
         <div className="prose prose-sm max-w-none">
           <div className="space-y-4">
             {/* Course Features */}
@@ -187,7 +187,7 @@ const Onboarding: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 via-purple-50 to-blue-100">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-indigo-100 via-purple-50 to-blue-100">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mx-auto" />
           <p className="mt-2 text-gray-600">
@@ -199,7 +199,7 @@ const Onboarding: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-blue-100">
+    <div className="min-h-screen bg-linear-to-br from-indigo-100 via-purple-50 to-blue-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -208,7 +208,7 @@ const Onboarding: React.FC = () => {
         >
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Welcome to
-            <span className="text-3xl font-bold  bg-gradient-to-r from-blue-400 to-blue-700  inline-block text-transparent bg-clip-text">
+            <span className="text-3xl font-bold  bg-linear-to-r from-blue-400 to-blue-700  inline-block text-transparent bg-clip-text">
               100xReview
             </span>
           </h1>
@@ -260,7 +260,7 @@ const Onboarding: React.FC = () => {
               <button
                 onClick={handleComplete}
                 disabled={isSubmitting || selectedCourses.length === 0}
-                className="inline-flex items-center px-8 py-3 rounded-md bg-indigo-600 text-white font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:-translate-y-1"
+                className="inline-flex items-center px-8 py-3 rounded-md bg-indigo-600 text-white font-medium hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:-translate-y-1"
               >
                 {isSubmitting ? (
                   <Loader2 className="h-5 w-5 animate-spin mr-2" />

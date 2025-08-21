@@ -46,7 +46,7 @@ export const CourseSelector: React.FC<CourseSelectorProps> = ({
           darkMode
             ? "bg-gray-700 text-white hover:bg-gray-600"
             : "bg-white text-gray-900 hover:bg-gray-100"
-        } border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
+        } border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500`}
       >
         <span className="truncate">
           {selectedCourse ? selectedCourse.name : "Select a course"}

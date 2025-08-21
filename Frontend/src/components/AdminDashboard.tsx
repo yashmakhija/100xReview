@@ -1496,7 +1496,7 @@ const AdminDashboard: React.FC = () => {
                   className="size-10 rounded-full"
                   src="https://appx-wsb-gcp.akamai.net.in/subject/2023-01-17-0.17044360120951185.jpg"
                 />
-                <div className="text-3xl font-bold  bg-gradient-to-r from-blue-400 to-blue-700  inline-block text-transparent bg-clip-text">
+                <div className="text-3xl font-bold  bg-linear-to-r from-blue-400 to-blue-700  inline-block text-transparent bg-clip-text">
                   100xReview
                 </div>
               </a>

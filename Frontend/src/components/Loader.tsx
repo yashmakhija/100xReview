@@ -39,7 +39,7 @@ const Loading: React.FC<AmazingLoaderProps> = ({
           absolute 
           inset-0 
           rounded-full 
-          bg-gradient-to-r 
+          bg-linear-to-r 
           ${
             colorClasses[color as keyof typeof colorClasses] ||
             colorClasses.blue

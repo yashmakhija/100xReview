@@ -284,7 +284,7 @@ const UserDashboard: React.FC = () => {
                   className="size-10 rounded-full"
                   src="https://appx-wsb-gcp.akamai.net.in/subject/2023-01-17-0.17044360120951185.jpg"
                 />
-                <div className="text-3xl font-bold  bg-gradient-to-r from-blue-400 to-blue-700  inline-block text-transparent bg-clip-text">
+                <div className="text-3xl font-bold  bg-linear-to-r from-blue-400 to-blue-700  inline-block text-transparent bg-clip-text">
                   100xReview
                 </div>
               </a>
@@ -348,7 +348,7 @@ const UserDashboard: React.FC = () => {
             <div className="p-5">
               <div className="flex items-center">
                 <div
-                  className={`flex-shrink-0 ${
+                  className={`shrink-0 ${
                     darkMode ? "text-blue-400" : "text-blue-600"
                   }`}
                 >
@@ -380,7 +380,7 @@ const UserDashboard: React.FC = () => {
             <div className="p-5">
               <div className="flex items-center">
                 <div
-                  className={`flex-shrink-0 ${
+                  className={`shrink-0 ${
                     darkMode ? "text-green-400" : "text-green-600"
                   }`}
                 >
@@ -412,7 +412,7 @@ const UserDashboard: React.FC = () => {
             <div className="p-5">
               <div className="flex items-center">
                 <div
-                  className={`flex-shrink-0 ${
+                  className={`shrink-0 ${
                     darkMode ? "text-amber-400" : "text-amber-600"
                   }`}
                 >
@@ -444,7 +444,7 @@ const UserDashboard: React.FC = () => {
             <div className="p-5">
               <div className="flex items-center">
                 <div
-                  className={`flex-shrink-0 ${
+                  className={`shrink-0 ${
                     darkMode ? "text-purple-400" : "text-purple-600"
                   }`}
                 >
@@ -595,7 +595,7 @@ const UserDashboard: React.FC = () => {
                       darkMode
                         ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
                         : "bg-white border-gray-300 text-black placeholder-gray-500"
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    } focus:outline-hidden focus:ring-2 focus:ring-blue-500`}
                     placeholder="https://github.com/username/repo"
                     required
                     disabled={submitting}
@@ -626,7 +626,7 @@ const UserDashboard: React.FC = () => {
                       darkMode
                         ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
                         : "bg-white border-gray-300 text-black placeholder-gray-500"
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    } focus:outline-hidden focus:ring-2 focus:ring-blue-500`}
                     placeholder="https://your-app.vercel.app"
                     required
                     disabled={submitting}
@@ -657,7 +657,7 @@ const UserDashboard: React.FC = () => {
                       darkMode
                         ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
                         : "bg-white border-gray-300 text-black placeholder-gray-500"
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    } focus:outline-hidden focus:ring-2 focus:ring-blue-500`}
                     placeholder="ws://your-app.xyz"
                     disabled={submitting}
                   />
