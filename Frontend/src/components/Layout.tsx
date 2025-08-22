@@ -2,6 +2,8 @@ import React, { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Footer from "./Footer";
 import { useAuthStore } from "../store/authStore";
+import { ThemeToggle } from "./ThemeToggle";
+import { useThemeHook } from "../hooks/useThemeHook";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -46,8 +48,19 @@ const Layout: React.FC<LayoutProps> = ({ children, hideFooter = false }) => {
     }
   };
 
+  const { theme } = useThemeHook();
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div
+      className="min-h-screen flex flex-col"
+      style={{
+        backgroundColor: theme === "dark" ? "#111111" : "#ffffff",
+        color: theme === "dark" ? "#f5f5f5" : "#111111",
+      }}
+    >
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
       <main className="grow">{children}</main>
       {!hideFooter && <Footer onProtectedLinkClick={handleProtectedLink} />}
     </div>

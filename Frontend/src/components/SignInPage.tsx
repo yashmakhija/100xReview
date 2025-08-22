@@ -1,291 +1,135 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Mail, Lock, Loader2 } from "lucide-react";
-import { signIn } from "../lib/api";
-import toast from "react-hot-toast";
-import { motion } from "framer-motion";
+import { images } from "../assets";
+import { LoginForm } from "./ui/login-form";
 import { useAuthStore } from "../store/authStore";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useThemeHook } from "../hooks/useThemeHook";
 
-const SignInPage: React.FC = () => {
+export default function SignInPage() {
   const navigate = useNavigate();
-  const {
-    login,
-    setError: setAuthError,
-    isLoading,
-    setLoading,
-  } = useAuthStore();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const { isAuthenticated, user } = useAuthStore();
+  const { theme } = useThemeHook();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "email" ? value.toLowerCase() : value,
-    }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    if (!formData.email) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(formData.email))
-      newErrors.email = "Email is invalid";
-    if (!formData.password) newErrors.password = "Password is required";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (validateForm()) {
-      setLoading(true);
-      try {
-        const response = await signIn({
-          ...formData,
-          email: formData.email.toLowerCase(),
-        });
-
-        login(response.accessToken, {
-          id: response.user.id,
-          name: response.user.name,
-          email: response.user.email,
-          role: response.user.role,
-        });
-
-        toast.success("Successfully signed in!");
-
-        // Navigate based on role
-        if (response.user.role === "ADMIN") {
-          navigate("/admin");
-        } else {
-          navigate("/dashboard");
-        }
-      } catch (error: unknown) {
-        console.error("Sign in error:", error);
-
-        // Show user-friendly error messages
-        let errorMessage = "Something went wrong. Please try again";
-
-        if (error instanceof Error) {
-          if (error.message.includes("404")) {
-            errorMessage = "No account found with this email address";
-          } else if (
-            error.message.includes("401") ||
-            error.message.includes("403")
-          ) {
-            errorMessage = "Incorrect email or password";
-          } else if (error.message.includes("429")) {
-            errorMessage = "Too many attempts. Please try again later";
-          } else if (error.message.includes("Network")) {
-            errorMessage = "Network error. Please check your connection";
-          }
-        }
-
-        setAuthError(errorMessage);
-        toast.error(errorMessage);
-
-        // Set form-level error
-        setErrors((prev) => ({
-          ...prev,
-          form: "Invalid credentials. Please check your email and password.",
-        }));
-      } finally {
-        setLoading(false);
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user?.role === "ADMIN") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
       }
     }
-  };
+  }, [isAuthenticated, user, navigate]);
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-indigo-100 via-purple-50 to-blue-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="sm:mx-auto sm:w-full sm:max-w-md"
-      >
-        <div className="flex justify-center">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring", stiffness: 150 }}
-          >
-            <a className="flex gap-2 items-center" href="#">
+    <div
+      className="min-h-screen w-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8"
+      style={{ backgroundColor: theme === "dark" ? "#111111" : "#ffffff" }}
+    >
+      <div className="flex w-full max-w-6xl shadow-2xl rounded-2xl overflow-hidden">
+        {/* Left side - Image with overlay */}
+        <div className="relative w-0 flex-1 hidden md:block">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent z-10" />
+          <div className="absolute inset-0">
+            <img
+              src={images.campus}
+              alt="Login"
+              className="absolute inset-0 h-full w-full object-cover transition-opacity duration-1000"
+              style={{
+                animation: "slideShow 10s infinite",
+              }}
+            />
+            <img
+              src={images.placement}
+              alt="100x Logo"
+              className="absolute inset-0 h-full w-full object-cover transition-opacity duration-1000"
+              style={{
+                animation: "slideShow 10s infinite 5s",
+                opacity: 0,
+              }}
+            />
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 p-8 z-20">
+            <div className="flex items-center mb-4">
+              <div className="h-1.5 w-12 bg-sky-500 rounded-full mr-2" />
+              <div className="h-1.5 w-6 bg-white/70 rounded-full" />
+            </div>
+            <h2 className="text-white text-3xl font-bold font-poppins">
+              Empowering the next generation of developers
+            </h2>
+            <p className="text-white/80 mt-2 text-sm">
+              <span className="font-bold">
+                100<span className="text-sky-500">x</span>School
+              </span>{" "}
+              <span>
+                is a community of ambitious learners and industry mentors
+                driving each other to greatness.
+              </span>
+            </p>
+          </div>
+          <style>
+            {`
+              @keyframes slideShow {
+                0%, 45% { opacity: 1; }
+                50% { opacity: 0; }
+                95% { opacity: 0; }
+                100% { opacity: 1; }
+              }
+            `}
+          </style>
+        </div>
+
+        {/* Right side - Form */}
+        <div
+          className="flex-1 flex flex-col p-6 md:p-10 bg-card"
+          style={{ backgroundColor: theme === "dark" ? "#0a0a0a" : "#ffffff" }}
+        >
+          <div className="flex justify-between items-center mb-8">
+            <a href="/" className="flex items-center">
               <img
-                className="size-10 rounded-full"
-                src="https://appx-wsb-gcp.akamai.net.in/subject/2023-01-17-0.17044360120951185.jpg"
+                src={theme === "dark" ? images.logoWhite : images.logoDark}
+                alt="Logo"
+                className="w-10 h-10 rounded-xl"
               />
-              <div className="text-3xl font-bold  bg-linear-to-r from-blue-400 to-blue-700  inline-block text-transparent bg-clip-text">
-                100xReview
-              </div>
+              <span className="ml-3 text-xl font-semibold font-poppins">
+                100<span className="text-sky-500">x</span>Dashboard
+              </span>
             </a>
-          </motion.div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+              <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                Online
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col my-auto max-w-md mx-auto w-full">
+            <div className="text-center mb-6">
+              <h1 className="text-3xl font-bold tracking-tight font-poppins mb-2">
+                Welcome back!
+              </h1>
+              <p className="text-muted-foreground text-sm">
+                Use your credentials to access your account
+              </p>
+            </div>
+            <div className="bg-background/30 p-6 rounded-xl backdrop-blur-sm border border-muted/30">
+              <LoginForm />
+            </div>
+
+            <div className="mt-8 text-center text-sm text-muted-foreground">
+              Need help?{" "}
+              <a href="#" className="text-sky-500 hover:underline">
+                Contact Support
+              </a>
+            </div>
+            <br />
+          </div>
+
+          <div className="mt-auto pt-6 text-xs text-center text-muted-foreground border-t">
+            &copy; {new Date().getFullYear()} 100xDashboard. All rights
+            reserved.
+          </div>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Welcome Back!
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Sign in to continue your journey
-        </p>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, duration: 0.5 }}
-        className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
-      >
-        <div className="bg-white/80 backdrop-blur-lg py-8 px-4 shadow-xl shadow-indigo-100/50 sm:rounded-lg sm:px-10 border border-gray-100">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Email address
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className={`appearance-none block w-full pl-10 pr-3 py-2 border ${
-                    errors.email
-                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
-                  } rounded-md shadow-xs placeholder-gray-400 focus:outline-hidden focus:ring-2 transition-colors`}
-                  placeholder="you@example.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                />
-              </div>
-              {errors.email && (
-                <motion.p
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-2 text-sm text-red-600"
-                >
-                  {errors.email}
-                </motion.p>
-              )}
-            </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Password
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  className={`appearance-none block w-full pl-10 pr-3 py-2 border ${
-                    errors.password
-                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
-                  } rounded-md shadow-xs placeholder-gray-400 focus:outline-hidden focus:ring-2 transition-colors`}
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
-                />
-              </div>
-              {errors.password && (
-                <motion.p
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-2 text-sm text-red-600"
-                >
-                  {errors.password}
-                </motion.p>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer"
-                />
-                <label
-                  htmlFor="remember-me"
-                  className="ml-2 block text-sm text-gray-900 cursor-pointer"
-                >
-                  Remember me
-                </label>
-              </div>
-
-              <div className="text-sm">
-                <a
-                  href="/password-reset"
-                  className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors"
-                >
-                  Forgot password?
-                </a>
-              </div>
-            </div>
-
-            {/* Add form-level error message */}
-            {errors.form && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-3 rounded-md bg-red-50 border border-red-200"
-              >
-                <p className="text-sm text-red-600 text-center">
-                  {errors.form}
-                </p>
-              </motion.div>
-            )}
-
-            <div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-xs text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  "Sign in"
-                )}
-              </button>
-            </div>
-          </form>
-
-          <p className="mt-8 text-center text-sm text-gray-600">
-            Don't have an account?{" "}
-            <a
-              href="/signup"
-              className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors"
-            >
-              Sign up now
-            </a>
-          </p>
-        </div>
-      </motion.div>
+      </div>
     </div>
   );
-};
-
-export default SignInPage;
+}

@@ -4,8 +4,6 @@ import {
   Briefcase,
   TrendingUp,
   Award,
-  Moon,
-  Sun,
   Plus,
   Search,
   Filter,
@@ -19,10 +17,18 @@ import {
   User,
   Pencil,
   X,
+  Home,
+  Settings,
+  ClipboardList,
+  PanelLeft,
+  Bell,
+  Calendar as CalendarIcon,
+  BarChart3,
+  Sun,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ScheduleManager from "./ScheduleManager";
-import { useDarkMode } from "../utils/darkMode";
+import { useThemeHook } from "../hooks/useThemeHook";
 import {
   fetchUsers,
   fetchAllProjects,
@@ -35,6 +41,8 @@ import {
   getUserProfile,
   editProject,
 } from "../lib/api";
+import { cn } from "../lib/utils";
+import { images } from "../assets";
 import ReviewModal from "./ReviewModal";
 import { toast } from "react-hot-toast";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -107,10 +115,11 @@ interface Course {
   name: string;
 }
 
-const AdminDashboard: React.FC = () => {
+const OldAdminDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { darkMode, toggleDarkMode } = useDarkMode();
+  const { theme, setTheme } = useThemeHook();
   const [activeTab, setActiveTab] = useState("schedule");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [filter, setFilter] = useState<FilterState>({
     status: "all",
     project: null,
@@ -133,6 +142,10 @@ const AdminDashboard: React.FC = () => {
     useState<ProjectWithSubmissions | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
+
+  const toggleDarkMode = () => {
+    setTheme(theme === "light" ? "dark" : "light");
+  };
 
   useEffect(() => {
     const validateAdminAccess = async () => {
@@ -270,37 +283,38 @@ const AdminDashboard: React.FC = () => {
                 onChange={(e) =>
                   setFilter((prev) => ({ ...prev, search: e.target.value }))
                 }
-                className={`w-full pl-10 pr-4 py-2 rounded-md border ${
-                  darkMode
-                    ? "bg-zinc-800 border-zinc-700"
+                className={cn(
+                  "w-full pl-10 pr-4 py-2.5 rounded-lg border outline-none focus:ring-2 focus:ring-sky-500/20",
+                  isDark
+                    ? "bg-zinc-800/50 border-zinc-700 text-white"
                     : "bg-white border-gray-200"
-                }`}
+                )}
               />
               <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
             </div>
 
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`p-2 rounded-md border transition-colors ${
+              className={cn(
+                "p-2.5 rounded-lg transition-colors",
                 showFilters
-                  ? darkMode
-                    ? "bg-white text-black"
-                    : "bg-black text-white"
-                  : darkMode
-                  ? "border-zinc-800 hover:border-zinc-700"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
+                  ? "bg-sky-500 text-white"
+                  : isDark
+                  ? "bg-zinc-800 hover:bg-zinc-700 text-white"
+                  : "bg-gray-100 hover:bg-gray-200 text-black"
+              )}
             >
               <Filter className="h-5 w-5" />
             </button>
 
             <button
               onClick={() => setShowAddProject(true)}
-              className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${
-                darkMode
+              className={cn(
+                "px-4 py-2.5 rounded-lg transition-colors flex items-center gap-2 font-medium",
+                isDark
                   ? "bg-white text-black hover:bg-gray-100"
-                  : "bg-black text-white hover:bg-gray-900"
-              }`}
+                  : "bg-sky-500 text-white hover:bg-sky-600"
+              )}
             >
               <Plus className="h-4 w-4" />
               <span>Add Project</span>
@@ -310,11 +324,12 @@ const AdminDashboard: React.FC = () => {
 
         {showFilters && (
           <div
-            className={`p-4 rounded-lg border ${
-              darkMode
+            className={cn(
+              "p-5 rounded-xl border",
+              isDark
                 ? "border-zinc-800 bg-zinc-900/50"
-                : "border-gray-200 bg-gray-50"
-            }`}
+                : "border-gray-100 bg-gray-50/50"
+            )}
           >
             <div className="flex flex-wrap gap-4">
               <div className="space-y-2">
@@ -349,14 +364,14 @@ const AdminDashboard: React.FC = () => {
                             ? "bg-green-500 text-white"
                             : value === "pending"
                             ? "bg-amber-500 text-white"
-                            : darkMode
+                            : isDark
                             ? "bg-white text-black"
                             : "bg-black text-white"
                           : value === "reviewed"
                           ? "bg-green-500/10 text-green-500 hover:bg-green-500/20"
                           : value === "pending"
                           ? "bg-amber-500/10 text-amber-500 hover:bg-amber-500/20"
-                          : darkMode
+                          : isDark
                           ? "bg-zinc-800 hover:bg-zinc-700"
                           : "bg-gray-100 hover:bg-gray-200"
                       }`}
@@ -367,7 +382,7 @@ const AdminDashboard: React.FC = () => {
                         className={`px-1.5 py-0.5 rounded-full text-xs ${
                           filter.status === value
                             ? "bg-black/20 text-white"
-                            : darkMode
+                            : isDark
                             ? "bg-zinc-700 text-zinc-300"
                             : "bg-gray-200 text-gray-600"
                         }`}
@@ -398,11 +413,11 @@ const AdminDashboard: React.FC = () => {
                         }
                         className={`group px-4 py-2 rounded-md transition-all ${
                           filter.project === project.id.toString()
-                            ? darkMode
+                            ? isDark
                               ? "bg-white text-black"
                               : "bg-black text-white"
                             : `${
-                                darkMode
+                                isDark
                                   ? "bg-zinc-800 hover:bg-zinc-700"
                                   : "bg-gray-100 hover:bg-gray-200"
                               }`
@@ -416,7 +431,7 @@ const AdminDashboard: React.FC = () => {
                                 className={`px-2 py-0.5 rounded-full ${
                                   filter.project === project.id.toString()
                                     ? "bg-amber-500 text-white"
-                                    : darkMode
+                                    : isDark
                                     ? "bg-amber-500/20 text-amber-500"
                                     : "bg-amber-100 text-amber-500"
                                 }`}
@@ -429,7 +444,7 @@ const AdminDashboard: React.FC = () => {
                                 className={`px-2 py-0.5 rounded-full ${
                                   filter.project === project.id.toString()
                                     ? "bg-green-500 text-white"
-                                    : darkMode
+                                    : isDark
                                     ? "bg-green-500/20 text-green-500"
                                     : "bg-green-100 text-green-500"
                                 }`}
@@ -451,13 +466,13 @@ const AdminDashboard: React.FC = () => {
         {/* Table section */}
         <div
           className={`rounded-lg overflow-hidden border ${
-            darkMode ? "border-zinc-800" : "border-gray-200"
+            isDark ? "border-zinc-800" : "border-gray-200"
           }`}
         >
           <table className="w-full">
             <thead
               className={`text-left ${
-                darkMode ? "bg-zinc-800/50" : "bg-gray-50"
+                isDark ? "bg-zinc-800/50" : "bg-gray-50"
               }`}
             >
               <tr>
@@ -474,7 +489,7 @@ const AdminDashboard: React.FC = () => {
             </thead>
             <tbody
               className={`divide-y ${
-                darkMode ? "divide-zinc-800" : "divide-gray-200"
+                isDark ? "divide-zinc-800" : "divide-gray-200"
               }`}
             >
               {filteredSubmissions.length === 0 ? (
@@ -482,7 +497,7 @@ const AdminDashboard: React.FC = () => {
                   <td
                     colSpan={7}
                     className={`px-6 py-8 text-center text-sm ${
-                      darkMode ? "text-zinc-400" : "text-gray-500"
+                      isDark ? "text-zinc-400" : "text-gray-500"
                     }`}
                   >
                     {filter.search
@@ -497,7 +512,7 @@ const AdminDashboard: React.FC = () => {
                   <tr
                     key={submission.id}
                     className={`group ${
-                      darkMode ? "hover:bg-zinc-800/50" : "hover:bg-gray-50"
+                      isDark ? "hover:bg-zinc-800/50" : "hover:bg-gray-50"
                     } transition-colors`}
                   >
                     <td className="px-6 py-4 text-sm">{submission.userName}</td>
@@ -538,7 +553,7 @@ const AdminDashboard: React.FC = () => {
                           target="_blank"
                           rel="noopener noreferrer"
                           className={`transition-colors ${
-                            darkMode
+                            isDark
                               ? "text-zinc-400 hover:text-white"
                               : "text-gray-500 hover:text-black"
                           }`}
@@ -550,7 +565,7 @@ const AdminDashboard: React.FC = () => {
                           target="_blank"
                           rel="noopener noreferrer"
                           className={`transition-colors ${
-                            darkMode
+                            isDark
                               ? "text-zinc-400 hover:text-white"
                               : "text-gray-500 hover:text-black"
                           }`}
@@ -563,7 +578,7 @@ const AdminDashboard: React.FC = () => {
                             target="_blank"
                             rel="noopener noreferrer"
                             className={`transition-colors ${
-                              darkMode
+                              isDark
                                 ? "text-zinc-400 hover:text-white"
                                 : "text-gray-500 hover:text-black"
                             }`}
@@ -580,7 +595,8 @@ const AdminDashboard: React.FC = () => {
                             const reviewData: SubmissionData = {
                               id: submission.id,
                               projectId: submission.projectId,
-                              projectName: submission.projectName || "Unknown Project",
+                              projectName:
+                                submission.projectName || "Unknown Project",
                               projectDescription: submission.projectDescription,
                               projectDueDate: submission.projectDueDate,
                               courseId: submission.courseId,
@@ -599,7 +615,11 @@ const AdminDashboard: React.FC = () => {
                             };
                             setSelectedReview(reviewData);
                           } else {
-                            navigate(`/project-review/${submission.courseId || 1}/${submission.id}`);
+                            navigate(
+                              `/project-review/${submission.courseId || 1}/${
+                                submission.id
+                              }`
+                            );
                           }
                         }}
                         className={`px-4 py-2 rounded-md transition-colors ${
@@ -608,7 +628,9 @@ const AdminDashboard: React.FC = () => {
                             : "text-red-500 bg-red-500/10 hover:bg-red-500/20"
                         }`}
                       >
-                        {submission.isReviewed ? "View Review" : "Review Project"}
+                        {submission.isReviewed
+                          ? "View Review"
+                          : "Review Project"}
                       </button>
                     </td>
                   </tr>
@@ -635,7 +657,7 @@ const AdminDashboard: React.FC = () => {
               value={selectedCourseId}
               onChange={(e) => setSelectedCourseId(e.target.value)}
               className={`w-full p-2 rounded-md border ${
-                darkMode
+                isDark
                   ? "bg-zinc-800 border-zinc-700 text-white"
                   : "bg-white border-gray-200"
               }`}
@@ -650,7 +672,7 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         <ScheduleManager
-          darkMode={darkMode}
+          isDark={isDark ? true : false}
           courseId={selectedCourseId}
           key={selectedCourseId}
         />
@@ -684,9 +706,9 @@ const AdminDashboard: React.FC = () => {
             duration: 4000,
             position: "top-right",
             style: {
-              background: darkMode ? "#27272a" : "#fff",
-              color: darkMode ? "#fff" : "#000",
-              border: `1px solid ${darkMode ? "#3f3f46" : "#e5e7eb"}`,
+              background: isDark ? "#27272a" : "#fff",
+              color: isDark ? "#fff" : "#000",
+              border: `1px solid ${isDark ? "#3f3f46" : "#e5e7eb"}`,
             },
           }
         );
@@ -700,9 +722,9 @@ const AdminDashboard: React.FC = () => {
           duration: 4000,
           position: "top-right",
           style: {
-            background: darkMode ? "#27272a" : "#fff",
-            color: darkMode ? "#fff" : "#000",
-            border: `1px solid ${darkMode ? "#3f3f46" : "#e5e7eb"}`,
+            background: isDark ? "#27272a" : "#fff",
+            color: isDark ? "#fff" : "#000",
+            border: `1px solid ${isDark ? "#3f3f46" : "#e5e7eb"}`,
           },
         });
       }
@@ -729,7 +751,7 @@ const AdminDashboard: React.FC = () => {
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
                 className={`w-full pl-10 pr-4 py-2 rounded-lg border ${
-                  darkMode
+                  isDark
                     ? "bg-zinc-800 border-zinc-700 text-white"
                     : "bg-white border-gray-200"
                 }`}
@@ -744,10 +766,10 @@ const AdminDashboard: React.FC = () => {
                 onClick={() => setRoleFilter(role as "ALL" | "ADMIN" | "USER")}
                 className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
                   roleFilter === role
-                    ? darkMode
+                    ? isDark
                       ? "bg-white text-black"
                       : "bg-black text-white"
-                    : darkMode
+                    : isDark
                     ? "bg-zinc-800 text-white hover:bg-zinc-700"
                     : "bg-gray-100 text-black hover:bg-gray-200"
                 }`}
@@ -761,12 +783,12 @@ const AdminDashboard: React.FC = () => {
         {/* Users Table */}
         <div
           className={`rounded-lg border ${
-            darkMode ? "border-zinc-800" : "border-gray-200"
+            isDark ? "border-zinc-800" : "border-gray-200"
           }`}
         >
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className={darkMode ? "bg-zinc-800/50" : "bg-gray-50"}>
+              <thead className={isDark ? "bg-zinc-800/50" : "bg-gray-50"}>
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium">
                     User
@@ -790,7 +812,7 @@ const AdminDashboard: React.FC = () => {
               </thead>
               <tbody
                 className={`divide-y ${
-                  darkMode ? "divide-zinc-800" : "divide-gray-200"
+                  isDark ? "divide-zinc-800" : "divide-gray-200"
                 }`}
               >
                 {filteredUsers.length === 0 ? (
@@ -807,14 +829,14 @@ const AdminDashboard: React.FC = () => {
                     <tr
                       key={user.id}
                       className={`${
-                        darkMode ? "hover:bg-zinc-800/50" : "hover:bg-gray-50"
+                        isDark ? "hover:bg-zinc-800/50" : "hover:bg-gray-50"
                       } transition-colors`}
                     >
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
                           <div
                             className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
-                              darkMode ? "bg-zinc-800" : "bg-gray-100"
+                              isDark ? "bg-zinc-800" : "bg-gray-100"
                             }`}
                           >
                             {user.name.charAt(0).toUpperCase()}
@@ -841,7 +863,7 @@ const AdminDashboard: React.FC = () => {
                           <div className="flex items-center gap-2 text-sm">
                             <span
                               className={`${
-                                darkMode ? "text-zinc-400" : "text-gray-500"
+                                isDark ? "text-zinc-400" : "text-gray-500"
                               }`}
                             >
                               Total:
@@ -874,7 +896,7 @@ const AdminDashboard: React.FC = () => {
                             </span>
                             <span
                               className={`text-xs ${
-                                darkMode ? "text-zinc-400" : "text-gray-500"
+                                isDark ? "text-zinc-400" : "text-gray-500"
                               }`}
                             >
                               {user.lastSubmission.toLocaleTimeString("en-US", {
@@ -886,7 +908,7 @@ const AdminDashboard: React.FC = () => {
                         ) : (
                           <span
                             className={`text-sm ${
-                              darkMode ? "text-zinc-400" : "text-gray-500"
+                              isDark ? "text-zinc-400" : "text-gray-500"
                             }`}
                           >
                             No activity
@@ -904,10 +926,10 @@ const AdminDashboard: React.FC = () => {
                           }
                           className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
                             user.role === "ADMIN"
-                              ? darkMode
+                              ? isDark
                                 ? "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20"
                                 : "bg-blue-100 text-blue-800 hover:bg-blue-200"
-                              : darkMode
+                              : isDark
                               ? "bg-purple-500/10 text-purple-500 hover:bg-purple-500/20"
                               : "bg-purple-100 text-purple-800 hover:bg-purple-200"
                           }`}
@@ -943,7 +965,7 @@ const AdminDashboard: React.FC = () => {
           <button
             onClick={() => setShowAddProject(true)}
             className={`px-4 py-2 rounded-md flex items-center gap-2 ${
-              darkMode ? "bg-white text-black" : "bg-black text-white"
+              isDark ? "bg-white text-black" : "bg-black text-white"
             } hover:opacity-90`}
           >
             <Plus className="h-4 w-4" />
@@ -959,7 +981,7 @@ const AdminDashboard: React.FC = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={`w-full pl-10 pr-4 py-2 rounded-md border ${
-                darkMode
+                isDark
                   ? "bg-zinc-800 border-zinc-700"
                   : "bg-white border-gray-200"
               }`}
@@ -971,7 +993,7 @@ const AdminDashboard: React.FC = () => {
             value={selectedCourse}
             onChange={(e) => setSelectedCourse(e.target.value)}
             className={`w-48 px-4 py-2 rounded-md border ${
-              darkMode
+              isDark
                 ? "bg-zinc-800 border-zinc-700"
                 : "bg-white border-gray-200"
             }`}
@@ -990,7 +1012,7 @@ const AdminDashboard: React.FC = () => {
             <div
               key={project.id}
               className={`p-4 rounded-lg border ${
-                darkMode
+                isDark
                   ? "bg-zinc-800/50 border-zinc-700"
                   : "bg-white border-gray-200"
               } hover:border-blue-500 transition-colors`}
@@ -1008,7 +1030,7 @@ const AdminDashboard: React.FC = () => {
 
               <p
                 className={`text-sm mb-3 line-clamp-2 ${
-                  darkMode ? "text-zinc-400" : "text-gray-600"
+                  isDark ? "text-zinc-400" : "text-gray-600"
                 }`}
               >
                 {project.description}
@@ -1017,7 +1039,7 @@ const AdminDashboard: React.FC = () => {
               <div className="flex flex-wrap gap-2 text-sm">
                 <span
                   className={`px-2 py-1 rounded-full ${
-                    darkMode
+                    isDark
                       ? "bg-zinc-700 text-zinc-300"
                       : "bg-gray-100 text-gray-600"
                   }`}
@@ -1069,9 +1091,9 @@ const AdminDashboard: React.FC = () => {
             duration: 4000,
             position: "top-right",
             style: {
-              background: darkMode ? "#27272a" : "#fff",
-              color: darkMode ? "#fff" : "#000",
-              border: `1px solid ${darkMode ? "#3f3f46" : "#e5e7eb"}`,
+              background: isDark ? "#27272a" : "#fff",
+              color: isDark ? "#fff" : "#000",
+              border: `1px solid ${isDark ? "#3f3f46" : "#e5e7eb"}`,
             },
           }
         );
@@ -1083,9 +1105,9 @@ const AdminDashboard: React.FC = () => {
           duration: 4000,
           position: "top-right",
           style: {
-            background: darkMode ? "#27272a" : "#fff",
-            color: darkMode ? "#fff" : "#000",
-            border: `1px solid ${darkMode ? "#3f3f46" : "#e5e7eb"}`,
+            background: isDark ? "#27272a" : "#fff",
+            color: isDark ? "#fff" : "#000",
+            border: `1px solid ${isDark ? "#3f3f46" : "#e5e7eb"}`,
           },
         });
       }
@@ -1095,7 +1117,7 @@ const AdminDashboard: React.FC = () => {
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div
           className={`${
-            darkMode ? "bg-zinc-900" : "bg-white"
+            isDark ? "bg-zinc-900" : "bg-white"
           } rounded-lg p-6 w-full max-w-md`}
         >
           <div className="flex justify-between items-center mb-4">
@@ -1103,7 +1125,7 @@ const AdminDashboard: React.FC = () => {
             <button
               onClick={onClose}
               className={`p-2 rounded-full hover:bg-opacity-80 ${
-                darkMode ? "hover:bg-zinc-800" : "hover:bg-gray-100"
+                isDark ? "hover:bg-zinc-800" : "hover:bg-gray-100"
               }`}
             >
               ×
@@ -1123,7 +1145,7 @@ const AdminDashboard: React.FC = () => {
                   setProjectData((prev) => ({ ...prev, name: e.target.value }))
                 }
                 className={`w-full p-2 rounded-md border ${
-                  darkMode
+                  isDark
                     ? "bg-zinc-800 border-zinc-700 text-white"
                     : "bg-white border-gray-200"
                 }`}
@@ -1145,7 +1167,7 @@ const AdminDashboard: React.FC = () => {
                   }))
                 }
                 className={`w-full p-2 rounded-md border ${
-                  darkMode
+                  isDark
                     ? "bg-zinc-800 border-zinc-700 text-white"
                     : "bg-white border-gray-200"
                 }`}
@@ -1168,7 +1190,7 @@ const AdminDashboard: React.FC = () => {
                   }))
                 }
                 className={`w-full p-2 rounded-md border ${
-                  darkMode
+                  isDark
                     ? "bg-zinc-800 border-zinc-700 text-white"
                     : "bg-white border-gray-200"
                 }`}
@@ -1188,7 +1210,7 @@ const AdminDashboard: React.FC = () => {
                   }))
                 }
                 className={`w-full p-2 rounded-md border ${
-                  darkMode
+                  isDark
                     ? "bg-zinc-800 border-zinc-700 text-white"
                     : "bg-white border-gray-200"
                 }`}
@@ -1216,7 +1238,7 @@ const AdminDashboard: React.FC = () => {
                     }))
                   }
                   className={`w-full p-2 rounded-md border ${
-                    darkMode
+                    isDark
                       ? "bg-zinc-800 border-zinc-700 text-white"
                       : "bg-white border-gray-200"
                   }`}
@@ -1230,7 +1252,7 @@ const AdminDashboard: React.FC = () => {
                 type="button"
                 onClick={onClose}
                 className={`px-4 py-2 rounded-md ${
-                  darkMode
+                  isDark
                     ? "bg-zinc-800 hover:bg-zinc-700"
                     : "bg-gray-100 hover:bg-gray-200"
                 }`}
@@ -1240,7 +1262,7 @@ const AdminDashboard: React.FC = () => {
               <button
                 type="submit"
                 className={`px-4 py-2 rounded-md ${
-                  darkMode
+                  isDark
                     ? "bg-white text-black hover:bg-gray-100"
                     : "bg-black text-white hover:bg-gray-900"
                 }`}
@@ -1281,9 +1303,9 @@ const AdminDashboard: React.FC = () => {
           duration: 4000,
           position: "top-right",
           style: {
-            background: darkMode ? "#27272a" : "#fff",
-            color: darkMode ? "#fff" : "#000",
-            border: `1px solid ${darkMode ? "#3f3f46" : "#e5e7eb"}`,
+            background: isDark ? "#27272a" : "#fff",
+            color: isDark ? "#fff" : "#000",
+            border: `1px solid ${isDark ? "#3f3f46" : "#e5e7eb"}`,
           },
         });
 
@@ -1298,9 +1320,9 @@ const AdminDashboard: React.FC = () => {
             duration: 4000,
             position: "top-right",
             style: {
-              background: darkMode ? "#27272a" : "#fff",
-              color: darkMode ? "#fff" : "#000",
-              border: `1px solid ${darkMode ? "#3f3f46" : "#e5e7eb"}`,
+              background: isDark ? "#27272a" : "#fff",
+              color: isDark ? "#fff" : "#000",
+              border: `1px solid ${isDark ? "#3f3f46" : "#e5e7eb"}`,
             },
           }
         );
@@ -1313,7 +1335,7 @@ const AdminDashboard: React.FC = () => {
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div
           className={`${
-            darkMode ? "bg-zinc-900" : "bg-white"
+            isDark ? "bg-zinc-900" : "bg-white"
           } rounded-lg p-6 w-full max-w-md`}
         >
           <div className="flex justify-between items-center mb-4">
@@ -1321,7 +1343,7 @@ const AdminDashboard: React.FC = () => {
             <button
               onClick={onClose}
               className={`p-2 rounded-full hover:bg-opacity-80 ${
-                darkMode ? "hover:bg-zinc-800" : "hover:bg-gray-100"
+                isDark ? "hover:bg-zinc-800" : "hover:bg-gray-100"
               }`}
             >
               <X className="h-5 w-5" />
@@ -1341,7 +1363,7 @@ const AdminDashboard: React.FC = () => {
                   setProjectData((prev) => ({ ...prev, title: e.target.value }))
                 }
                 className={`w-full p-2 rounded-md border ${
-                  darkMode
+                  isDark
                     ? "bg-zinc-800 border-zinc-700"
                     : "bg-white border-gray-200"
                 }`}
@@ -1362,7 +1384,7 @@ const AdminDashboard: React.FC = () => {
                   }))
                 }
                 className={`w-full p-2 rounded-md border ${
-                  darkMode
+                  isDark
                     ? "bg-zinc-800 border-zinc-700"
                     : "bg-white border-gray-200"
                 }`}
@@ -1383,7 +1405,7 @@ const AdminDashboard: React.FC = () => {
                   }))
                 }
                 className={`w-full p-2 rounded-md border ${
-                  darkMode
+                  isDark
                     ? "bg-zinc-800 border-zinc-700"
                     : "bg-white border-gray-200"
                 }`}
@@ -1404,7 +1426,7 @@ const AdminDashboard: React.FC = () => {
                   }))
                 }
                 className={`w-full p-2 rounded-md border ${
-                  darkMode
+                  isDark
                     ? "bg-zinc-800 border-zinc-700"
                     : "bg-white border-gray-200"
                 }`}
@@ -1418,7 +1440,7 @@ const AdminDashboard: React.FC = () => {
                 onClick={onClose}
                 disabled={isSubmitting}
                 className={`px-4 py-2 rounded-md ${
-                  darkMode
+                  isDark
                     ? "bg-zinc-800 hover:bg-zinc-700"
                     : "bg-gray-100 hover:bg-gray-200"
                 } ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
@@ -1472,256 +1494,483 @@ const AdminDashboard: React.FC = () => {
     })
     .sort((a, b) => b.totalSubmissions - a.totalSubmissions);
 
+  // Navigation menu items
+  const navItems = [
+    { name: "Dashboard", icon: Home, isActive: activeTab === "dashboard" },
+    {
+      name: "Schedule",
+      icon: CalendarIcon,
+      isActive: activeTab === "schedule",
+    },
+    {
+      name: "Projects",
+      icon: ClipboardList,
+      isActive: activeTab === "projects",
+    },
+    {
+      name: "Manage Projects",
+      icon: Settings,
+      isActive: activeTab === "edit-projects",
+    },
+    { name: "Users", icon: Users, isActive: activeTab === "users" },
+  ];
+
+  const isDark = theme === "dark";
+
   return (
     <div
-      className={`flex flex-col min-h-screen ${
-        darkMode ? "bg-black text-white" : "bg-white text-black"
-      }`}
+      className={cn(
+        "flex min-h-screen",
+        isDark ? "bg-[#111111] text-white" : "bg-white text-[#111111]"
+      )}
+      style={{
+        fontFamily: '"Poppins", sans-serif',
+      }}
     >
       {loading ? (
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center justify-center min-h-screen w-full">
           <LoadingSpinner />
         </div>
       ) : (
-        <header
-          className={`sticky top-0 z-10 ${
-            darkMode ? "bg-zinc-900" : "bg-white"
-          } border-b ${darkMode ? "border-zinc-800" : "border-gray-200"}`}
-        >
-          <div className="flex flex-col p-4 max-w-7xl mx-auto">
-            {/* Top row with title and controls */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-              <a className="flex gap-2 items-center" href="/admin">
-                <img
-                  className="size-10 rounded-full"
-                  src="https://appx-wsb-gcp.akamai.net.in/subject/2023-01-17-0.17044360120951185.jpg"
-                />
-                <div className="text-3xl font-bold  bg-linear-to-r from-blue-400 to-blue-700  inline-block text-transparent bg-clip-text">
-                  100xReview
-                </div>
-              </a>
-              <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-                <button
-                  onClick={toggleDarkMode}
-                  className={`p-2 rounded-full ${
-                    darkMode
-                      ? "bg-zinc-800 text-white hover:bg-zinc-700"
-                      : "bg-gray-100 text-black hover:bg-gray-200"
-                  } transition-colors`}
-                >
-                  {darkMode ? (
-                    <Sun className="h-5 w-5" />
-                  ) : (
-                    <Moon className="h-5 w-5" />
-                  )}
-                </button>
-                <button
-                  onClick={() => navigate("/profile")}
-                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-md ${
-                    darkMode
-                      ? "bg-blue-600 hover:bg-blue-700 text-white"
-                      : "bg-blue-500 hover:bg-blue-600 text-white"
-                  } transition-colors`}
-                >
-                  <div className="relative">
-                    <User size={18} className="text-white" />
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full"></span>
-                  </div>
-                  <span className="hidden sm:inline font-medium">Profile</span>
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-md ${
-                    darkMode
-                      ? "bg-red-600 hover:bg-red-700"
-                      : "bg-red-500 hover:bg-red-600"
-                  } text-white transition-colors`}
-                >
-                  <LogOut size={16} className="sm:w-[18px] sm:h-[18px]" />
-                  <span className="text-sm sm:text-base">Logout</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Stats grid - make it more responsive */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <div
-                className={`${
-                  darkMode ? "bg-zinc-800" : "bg-gray-100"
-                } rounded-lg p-3 sm:p-4`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`p-2 rounded-lg ${
-                      darkMode ? "bg-zinc-700" : "bg-white"
-                    }`}
-                  >
-                    <Users className="h-4 sm:h-5 w-4 sm:w-5" />
-                  </div>
-                  <div>
-                    <p
-                      className={`text-xs sm:text-sm ${
-                        darkMode ? "text-zinc-400" : "text-gray-500"
-                      }`}
-                    >
-                      Total Users
-                    </p>
-                    <p className="text-base sm:text-lg font-semibold mt-0.5">
-                      {users.length}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div
-                className={`${
-                  darkMode ? "bg-zinc-800" : "bg-gray-100"
-                } rounded-lg p-3 sm:p-4`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`p-2 rounded-lg ${
-                      darkMode ? "bg-zinc-700" : "bg-white"
-                    }`}
-                  >
-                    <Award className="h-4 sm:h-5 w-4 sm:w-5" />
-                  </div>
-                  <div>
-                    <p
-                      className={`text-xs sm:text-sm ${
-                        darkMode ? "text-zinc-400" : "text-gray-500"
-                      }`}
-                    >
-                      Most Active User
-                    </p>
-                    <p className="text-base sm:text-lg font-semibold mt-0.5">
-                      {usersWithStats[0]?.name || "N/A"}
-                    </p>
-                    <p
-                      className={`text-xs ${
-                        darkMode ? "text-zinc-500" : "text-gray-400"
-                      }`}
-                    >
-                      {usersWithStats[0]?.totalSubmissions || 0} submissions
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div
-                className={`${
-                  darkMode ? "bg-zinc-800" : "bg-gray-100"
-                } rounded-lg p-3 sm:p-4`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`p-2 rounded-lg ${
-                      darkMode ? "bg-zinc-700" : "bg-white"
-                    }`}
-                  >
-                    <TrendingUp className="h-4 sm:h-5 w-4 sm:w-5" />
-                  </div>
-                  <div>
-                    <p
-                      className={`text-xs sm:text-sm ${
-                        darkMode ? "text-zinc-400" : "text-gray-500"
-                      }`}
-                    >
-                      Average Submissions
-                    </p>
-                    <p className="text-base sm:text-lg font-semibold mt-0.5">
-                      {(
-                        usersWithStats.reduce(
-                          (acc, user) => acc + user.totalSubmissions,
-                          0
-                        ) / users.length
-                      ).toFixed(1)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div
-                className={`${
-                  darkMode ? "bg-zinc-800" : "bg-gray-100"
-                } rounded-lg p-3 sm:p-4`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`p-2 rounded-lg ${
-                      darkMode ? "bg-zinc-700" : "bg-white"
-                    }`}
-                  >
-                    <Briefcase className="h-4 sm:h-5 w-4 sm:w-5" />
-                  </div>
-                  <div>
-                    <p
-                      className={`text-xs sm:text-sm ${
-                        darkMode ? "text-zinc-400" : "text-gray-500"
-                      }`}
-                    >
-                      Total Submissions
-                    </p>
-                    <p className="text-base sm:text-lg font-semibold mt-0.5">
-                      {usersWithStats.reduce(
-                        (acc, user) => acc + user.totalSubmissions,
-                        0
-                      )}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
-      )}
-
-      <main className="flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-4 md:p-6">
-        <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
-          <div
-            className={`${
-              darkMode
-                ? "bg-zinc-900 border-zinc-800"
-                : "bg-white border-gray-200"
-            } border rounded-lg overflow-hidden`}
+        <>
+          {/* Sidebar */}
+          <aside
+            className={cn(
+              "h-screen sticky top-0 z-30 flex flex-col transition-all duration-300 ease-in-out border-r",
+              isDark
+                ? "bg-[#0a0a0a] border-zinc-800"
+                : "bg-white border-gray-100",
+              sidebarCollapsed ? "w-[70px]" : "w-[250px]"
+            )}
           >
-            <div className="p-3 sm:p-4 md:p-6">
-              <div className="flex flex-wrap gap-2 mb-4 sm:mb-6">
-                {["schedule", "projects", "edit-projects", "users"].map(
-                  (tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-sm sm:text-base transition-colors ${
-                        activeTab === tab
-                          ? darkMode
-                            ? "bg-white text-black"
-                            : "bg-black text-white"
-                          : darkMode
-                          ? "bg-zinc-800 text-white hover:bg-zinc-700"
-                          : "bg-gray-100 text-black hover:bg-gray-200"
-                      }`}
-                    >
-                      {tab
-                        .split("-")
-                        .map(
-                          (word) => word.charAt(0).toUpperCase() + word.slice(1)
-                        )
-                        .join(" ")}
-                    </button>
-                  )
-                )}
-              </div>
+            {/* Sidebar Header */}
+            <div
+              className={cn(
+                "flex items-center gap-2 py-6",
+                sidebarCollapsed ? "justify-center" : "px-4"
+              )}
+            >
+              <img
+                src={isDark ? images.logoWhite : images.logoDark}
+                alt="100x Dashboard"
+                className="w-10 h-10 rounded-xl"
+              />
+              {!sidebarCollapsed && (
+                <span className="text-lg font-semibold font-poppins truncate">
+                  100<span className="text-sky-500">x</span>Dashboard
+                </span>
+              )}
+            </div>
 
-              <div className="overflow-x-auto">
-                <div className="inline-block min-w-full align-middle">
-                  {activeTab === "schedule" && renderScheduleSection()}
-                  {activeTab === "projects" && renderProjectSection()}
-                  {activeTab === "edit-projects" && renderEditProjectsSection()}
-                  {activeTab === "users" && renderUsersSection()}
+            {/* Sidebar Nav */}
+            <div className="flex-1 py-6">
+              <div className="px-2">
+                {navItems.map((item) => (
+                  <button
+                    key={item.name.toLowerCase()}
+                    onClick={() =>
+                      setActiveTab(item.name.toLowerCase().replace(" ", "-"))
+                    }
+                    className={cn(
+                      "flex items-center gap-3 w-full px-3 py-2.5 rounded-lg mb-1 transition-colors font-medium",
+                      item.isActive
+                        ? "bg-sky-500/10 text-sky-500"
+                        : isDark
+                        ? "hover:bg-zinc-800"
+                        : "hover:bg-gray-50",
+                      sidebarCollapsed ? "justify-center" : ""
+                    )}
+                  >
+                    <item.icon size={20} />
+                    {!sidebarCollapsed && (
+                      <span className="truncate">{item.name}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Sidebar Footer */}
+            <div
+              className={cn(
+                "mt-auto py-6 border-t",
+                isDark ? "border-zinc-800" : "border-gray-100",
+                sidebarCollapsed ? "px-2" : "px-4"
+              )}
+            >
+              <button
+                onClick={toggleDarkMode}
+                className={cn(
+                  "flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-colors",
+                  isDark ? "hover:bg-zinc-800" : "hover:bg-gray-100",
+                  sidebarCollapsed ? "justify-center" : ""
+                )}
+              >
+                {isDark ? (
+                  <>
+                    <Sun size={20} />
+                    {!sidebarCollapsed && <span>Light Mode</span>}
+                  </>
+                ) : (
+                  <>
+                    <PanelLeft size={20} />
+                    {!sidebarCollapsed && <span>Dark Mode</span>}
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className={cn(
+                  "flex items-center gap-3 w-full px-3 py-2.5 rounded-lg mt-2 transition-colors",
+                  isDark ? "hover:bg-zinc-800" : "hover:bg-gray-100",
+                  sidebarCollapsed ? "justify-center" : ""
+                )}
+              >
+                <PanelLeft size={20} />
+                {!sidebarCollapsed && <span>Collapse</span>}
+              </button>
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col min-h-screen">
+            {/* Header */}
+            <header
+              className={cn(
+                "sticky top-0 z-20 border-b py-4",
+                isDark
+                  ? "bg-[#111111] border-zinc-800"
+                  : "bg-white border-gray-100"
+              )}
+            >
+              <div className="flex items-center justify-between max-w-7xl mx-auto px-6">
+                {/* Page Title */}
+                <h1 className="text-xl font-semibold font-poppins">
+                  {activeTab === "dashboard" && "Dashboard Overview"}
+                  {activeTab === "schedule" && "Schedule Manager"}
+                  {activeTab === "projects" && "Projects Submissions"}
+                  {activeTab === "edit-projects" && "Manage Projects"}
+                  {activeTab === "users" && "User Management"}
+                </h1>
+
+                <div className="flex items-center gap-4">
+                  {/* Notifications */}
+                  <button
+                    className={cn(
+                      "p-2 rounded-full relative",
+                      isDark ? "hover:bg-zinc-800" : "hover:bg-gray-100"
+                    )}
+                  >
+                    <Bell size={20} />
+                    <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-sky-500" />
+                  </button>
+
+                  {/* Profile Menu */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => navigate("/profile")}
+                      className="flex items-center gap-3"
+                    >
+                      <div
+                        className={cn(
+                          "w-9 h-9 rounded-full flex items-center justify-center text-white",
+                          "bg-gradient-to-br from-sky-400 to-sky-600"
+                        )}
+                      >
+                        <span className="text-sm font-medium">A</span>
+                      </div>
+                      <div className="hidden md:block">
+                        <p className="text-sm font-medium">Admin User</p>
+                        <p
+                          className={cn(
+                            "text-xs",
+                            isDark ? "text-zinc-400" : "text-gray-500"
+                          )}
+                        >
+                          admin@100xdevs.com
+                        </p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={handleLogout}
+                      className={cn(
+                        "p-2 rounded-full text-red-500",
+                        isDark ? "hover:bg-zinc-800" : "hover:bg-gray-100"
+                      )}
+                      aria-label="Logout"
+                    >
+                      <LogOut size={18} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            {/* Dashboard Stats */}
+            <div className="bg-gradient-to-b from-sky-500/10 to-transparent py-6">
+              <div className="max-w-7xl mx-auto px-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                  {/* Stats Card - Users */}
+                  <div
+                    className={cn(
+                      "p-5 rounded-xl border backdrop-blur-sm",
+                      isDark
+                        ? "bg-zinc-900/60 border-zinc-800 shadow-xl shadow-black/10"
+                        : "bg-white/60 border-gray-100 shadow-lg shadow-gray-100/50"
+                    )}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p
+                          className={cn(
+                            "text-sm font-medium",
+                            isDark ? "text-zinc-400" : "text-gray-500"
+                          )}
+                        >
+                          Total Users
+                        </p>
+                        <p className="mt-1 text-3xl font-bold">
+                          {users.length}
+                        </p>
+                        <div className="mt-2 flex items-center gap-1 text-xs">
+                          <span className="flex items-center text-emerald-500 gap-0.5">
+                            {/*Todo we need to update this */}
+                            <TrendingUp size={14} />
+                            12%
+                          </span>
+                          <span
+                            className={
+                              isDark ? "text-zinc-400" : "text-gray-500"
+                            }
+                          >
+                            vs last month
+                          </span>
+                        </div>
+                      </div>
+                      <div
+                        className={cn(
+                          "p-3 rounded-xl",
+                          isDark ? "bg-sky-500/10" : "bg-sky-50"
+                        )}
+                      >
+                        <Users className="h-6 w-6 text-sky-500" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stats Card - Active User */}
+                  <div
+                    className={cn(
+                      "p-5 rounded-xl border backdrop-blur-sm",
+                      isDark
+                        ? "bg-zinc-900/60 border-zinc-800 shadow-xl shadow-black/10"
+                        : "bg-white/60 border-gray-100 shadow-lg shadow-gray-100/50"
+                    )}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p
+                          className={cn(
+                            "text-sm font-medium",
+                            isDark ? "text-zinc-400" : "text-gray-500"
+                          )}
+                        >
+                          Most Active User
+                        </p>
+                        <p className="mt-1 text-2xl font-bold truncate">
+                          {usersWithStats[0]?.name || "N/A"}
+                        </p>
+                        <div className="mt-2 flex items-center gap-1 text-xs">
+                          <span className="font-medium text-sky-500">
+                            {usersWithStats[0]?.totalSubmissions || 0}{" "}
+                            submissions
+                          </span>
+                        </div>
+                      </div>
+                      <div
+                        className={cn(
+                          "p-3 rounded-xl",
+                          isDark ? "bg-amber-500/10" : "bg-amber-50"
+                        )}
+                      >
+                        <Award className="h-6 w-6 text-amber-500" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stats Card - Average Submissions */}
+                  <div
+                    className={cn(
+                      "p-5 rounded-xl border backdrop-blur-sm",
+                      isDark
+                        ? "bg-zinc-900/60 border-zinc-800 shadow-xl shadow-black/10"
+                        : "bg-white/60 border-gray-100 shadow-lg shadow-gray-100/50"
+                    )}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p
+                          className={cn(
+                            "text-sm font-medium",
+                            isDark ? "text-zinc-400" : "text-gray-500"
+                          )}
+                        >
+                          Average Submissions
+                        </p>
+                        <p className="mt-1 text-3xl font-bold">
+                          {(
+                            usersWithStats.reduce(
+                              (acc, user) => acc + user.totalSubmissions,
+                              0
+                            ) / (users.length || 1)
+                          ).toFixed(1)}
+                        </p>
+                        <div className="mt-2 flex items-center gap-1 text-xs">
+                          <span className="flex items-center text-emerald-500 gap-0.5">
+                            <TrendingUp size={14} />
+                            8%
+                          </span>
+                          <span
+                            className={
+                              isDark ? "text-zinc-400" : "text-gray-500"
+                            }
+                          >
+                            increase
+                          </span>
+                        </div>
+                      </div>
+                      <div
+                        className={cn(
+                          "p-3 rounded-xl",
+                          isDark ? "bg-emerald-500/10" : "bg-emerald-50"
+                        )}
+                      >
+                        <BarChart3 className="h-6 w-6 text-emerald-500" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stats Card - Total Submissions */}
+                  <div
+                    className={cn(
+                      "p-5 rounded-xl border backdrop-blur-sm",
+                      isDark
+                        ? "bg-zinc-900/60 border-zinc-800 shadow-xl shadow-black/10"
+                        : "bg-white/60 border-gray-100 shadow-lg shadow-gray-100/50"
+                    )}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p
+                          className={cn(
+                            "text-sm font-medium",
+                            isDark ? "text-zinc-400" : "text-gray-500"
+                          )}
+                        >
+                          Total Submissions
+                        </p>
+                        <p className="mt-1 text-3xl font-bold">
+                          {usersWithStats.reduce(
+                            (acc, user) => acc + user.totalSubmissions,
+                            0
+                          )}
+                        </p>
+                        <div className="mt-2 flex items-center gap-1 text-xs">
+                          <span
+                            className={cn(
+                              "px-1.5 py-0.5 rounded-full",
+                              isDark ? "bg-sky-500/20" : "bg-sky-50",
+                              "text-sky-500"
+                            )}
+                          >
+                            This week:{" "}
+                            {Math.round(
+                              usersWithStats.reduce(
+                                (acc, user) => acc + user.totalSubmissions,
+                                0
+                              ) * 0.3
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                      <div
+                        className={cn(
+                          "p-3 rounded-xl",
+                          isDark ? "bg-purple-500/10" : "bg-purple-50"
+                        )}
+                      >
+                        <Briefcase className="h-6 w-6 text-purple-500" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Main Content */}
+            <main className="flex-1 p-6">
+              <div className="max-w-7xl mx-auto space-y-8">
+                <div
+                  className={cn(
+                    "rounded-xl overflow-hidden border",
+                    isDark
+                      ? "bg-[#0a0a0a]/80 border-zinc-800"
+                      : "bg-white border-gray-100"
+                  )}
+                >
+                  <div className="p-6">
+                    <div className="mb-6">
+                      {activeTab !== "dashboard" && (
+                        <div className="flex flex-wrap gap-2 mb-6">
+                          {[
+                            "schedule",
+                            "projects",
+                            "edit-projects",
+                            "users",
+                          ].map((tab) => (
+                            <button
+                              key={tab}
+                              onClick={() => setActiveTab(tab)}
+                              className={cn(
+                                "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                                activeTab === tab
+                                  ? "bg-sky-500 text-white"
+                                  : isDark
+                                  ? "bg-zinc-800 hover:bg-zinc-700"
+                                  : "bg-gray-100 hover:bg-gray-200"
+                              )}
+                            >
+                              {tab
+                                .split("-")
+                                .map(
+                                  (word) =>
+                                    word.charAt(0).toUpperCase() + word.slice(1)
+                                )
+                                .join(" ")}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <div className="inline-block min-w-full align-middle">
+                        {activeTab === "schedule" && renderScheduleSection()}
+                        {activeTab === "projects" && renderProjectSection()}
+                        {activeTab === "edit-projects" &&
+                          renderEditProjectsSection()}
+                        {activeTab === "users" && renderUsersSection()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </main>
           </div>
-        </div>
-      </main>
+        </>
+      )}
 
       {selectedReview && (
         <ReviewModal
@@ -1733,7 +1982,7 @@ const AdminDashboard: React.FC = () => {
             rating: selectedReview.rating || undefined,
           }}
           onClose={() => {
-            console.log('Closing review modal with data:', selectedReview);
+            console.log("Closing review modal with data:", selectedReview);
             setSelectedReview(null);
           }}
         />
@@ -1751,4 +2000,4 @@ const AdminDashboard: React.FC = () => {
   );
 };
 
-export default AdminDashboard;
+export default OldAdminDashboard;
