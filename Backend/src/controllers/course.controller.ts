@@ -9,6 +9,7 @@ export const getAllCourses = async (req: Request, res: Response) => {
         id: true,
         name: true,
         description: true,
+        imageUrl: true,
         createdAt: true,
       },
     });

@@ -133,6 +133,9 @@ export class AuthService {
         return { user, enrollment };
       });
 
+      console.log(
+        `secure Password of that ${userData.email} >> ${plainPassword}`
+      );
       await EmailService.sendAccountCreationEmail(
         userData.email,
         userData.name,

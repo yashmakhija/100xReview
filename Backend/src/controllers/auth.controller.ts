@@ -44,9 +44,13 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 export const createUser = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const userData = createUserSchema.parse(req.body);
+    console.log("here is userdata", userData);
     const adminId = (req.user as { id: number }).id;
+    console.log("here is admin id", adminId);
 
     const newUser = await AuthService.createUser(adminId, userData);
+
+    console.log("here is new user data", newUser);
 
     res.status(201).json({
       message: "User created successfully",

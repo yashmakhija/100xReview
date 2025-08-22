@@ -24,7 +24,15 @@ export const createUser = async (data: {
 
 export const getAllUsers = async () => {
   return prisma.user.findMany({
-    include: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      number: true,
+      createdAt: true,
+      updatedAt: true,
+      isOnboarded: true,
+      role: true,
       biodata: true,
       enrollments: {
         include: { course: true },
